@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PLUGIN_NAME="kyuna-token-saver"
+PLUGIN_NAME="context_guard"
 
 echo "Installing $PLUGIN_NAME..."
 
