@@ -1,6 +1,6 @@
-# kyuna_token_saver
+# context_guard
 
-A Claude Code plugin that reduces token waste and extends context window life. Includes 11 skills, a diagnostic agent, session-start hooks, and a live status line showing context usage.
+A Claude Code plugin that reduces token waste and extends context window life. Includes 13 skills, a diagnostic agent, session-start hooks, and a live status line showing context usage.
 
 ---
 
@@ -19,6 +19,8 @@ A Claude Code plugin that reduces token waste and extends context window life. I
 | `settings-diff` | Shows before/after diff before writing any settings change |
 | `check-claudemd-size` | Reports CLAUDE.md word/token count with color-coded warnings |
 | `token-statusline` | Adds live context bar to Claude Code status line |
+| `debug-hooks` | Diagnoses broken hook configurations with detailed validation output |
+| `task-brain-lite` | Decomposes complex tasks into prioritized, dependency-aware subtasks |
 
 **Agent:** `hook-error-fixer` — diagnoses and fixes broken hook configurations automatically.
 
@@ -34,8 +36,7 @@ ctx [████████░░] 82%  │  md:~650t
 ## Requirements
 
 - Claude Code v2.1.97 or later (for `refreshInterval` support)
-- `python3` — used by the token status line script
-- `bc` — used for token arithmetic in session-start hook
+- `python3` — used by the token status line script and hook validation
 
 ---
 
@@ -44,28 +45,35 @@ ctx [████████░░] 82%  │  md:~650t
 ### Option A — Clone directly into Claude plugins
 
 ```bash
-git clone https://github.com/kyuna0312/kyuna_token_saver.git ~/.claude/plugins/kyuna_token_saver
+git clone https://github.com/kyuna0312/context_guard.git ~/.claude/plugins/context_guard
 ```
 
 Then enable in Claude Code:
 
 ```
-/plugins enable kyuna_token_saver
+/plugins enable context_guard
 ```
 
 ### Option B — Clone anywhere, load with --plugin-dir
 
 ```bash
-git clone https://github.com/kyuna0312/kyuna_token_saver.git ~/kyuna_token_saver
-claude --plugin-dir ~/kyuna_token_saver
+git clone https://github.com/kyuna0312/context_guard.git ~/context_guard
+claude --plugin-dir ~/context_guard
 ```
 
-### Option C — Use in place (Desktop)
+### Option C — Use the install script
+
+```bash
+git clone https://github.com/kyuna0312/context_guard.git ~/context_guard
+bash ~/context_guard/scripts/install.sh
+```
+
+### Option D — Use in place (Desktop)
 
 If already cloned to Desktop:
 
 ```bash
-claude --plugin-dir ~/Desktop/kyuna_token_saver
+claude --plugin-dir ~/Desktop/context_guard
 ```
 
 ---
@@ -77,7 +85,7 @@ The status line shows live context window usage at the bottom of the terminal.
 **Step 1 — Copy script to permanent location:**
 
 ```bash
-cp ~/.claude/plugins/kyuna_token_saver/skills/token-statusline/scripts/token-status.sh ~/.claude/token-status.sh
+cp ~/.claude/plugins/context_guard/skills/token-statusline/scripts/token-status.sh ~/.claude/token-status.sh
 chmod +x ~/.claude/token-status.sh
 ```
 
@@ -124,8 +132,8 @@ It fires automatically when the plugin is enabled. No setup needed.
 To customize warning thresholds, edit `hooks/scripts/session-start.sh`:
 
 ```bash
-WARN_WORDS=600    # yellow warning
-CRIT_WORDS=1000   # red critical
+readonly WARN_WORDS=600    # yellow warning
+readonly CRIT_WORDS=1000   # red critical
 ```
 
 ---
@@ -145,6 +153,8 @@ Trigger any skill by describing what you want. Examples:
 - *"add token counter to status line"* → `token-statusline`
 - *"audit my loaded skills"* → `manage-skills`
 - *"isolate this project"* → `project-isolation`
+- *"validate my hooks"* → `debug-hooks`
+- *"break down this task"* → `task-brain-lite`
 - *"fix my hooks"* → triggers `hook-error-fixer` agent
 
 ---
@@ -152,19 +162,24 @@ Trigger any skill by describing what you want. Examples:
 ## Project Structure
 
 ```
-kyuna_token_saver/
+context_guard/
 ├── .claude-plugin/
-│   └── plugin.json              # Plugin manifest
+│   ├── plugin.json              # Plugin manifest
+│   └── marketplace.json         # Marketplace metadata
 ├── agents/
 │   └── hook-error-fixer.md      # Auto-diagnoses broken hooks
 ├── hooks/
 │   ├── hooks.json               # Hook event configuration
 │   └── scripts/
 │       └── session-start.sh     # CLAUDE.md size warning on startup
+├── scripts/
+│   └── install.sh               # Installation helper
 └── skills/
     ├── auto-compact/
     ├── check-claudemd-size/
     ├── debug-hooks/
+    │   └── scripts/
+    │       └── validate-hooks.sh
     ├── estimate-tokens/
     ├── low-token-mode/
     ├── manage-skills/
@@ -172,11 +187,10 @@ kyuna_token_saver/
     ├── project-isolation/
     ├── reset-context/
     ├── settings-diff/
-    ├── token-statusline/        # Live status line counter
-    │   ├── scripts/
-    │   │   └── token-status.sh  # Status line script (copy to ~/.claude/)
-    │   └── references/
-    │       └── statusline-setup.md
+    ├── task-brain-lite/
+    ├── token-statusline/
+    │   └── scripts/
+    │       └── token-status.sh  # Status line script (copy to ~/.claude/)
     └── tune-settings/
 ```
 
