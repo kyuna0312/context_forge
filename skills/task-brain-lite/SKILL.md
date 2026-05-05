@@ -1,12 +1,7 @@
 ---
-name: task_brain_lite
-description: |
-  Task decomposition, prioritization, execution, and memory reuse engine. 
-  Use this skill whenever the user says /task_brain, asks to "break down" a task, 
-  "plan" or "decompose" a complex problem, mentions task complexity, or asks you 
-  to figure out what to do first. Also trigger automatically when you detect a 
-  task with multiple moving parts, unclear dependencies, or high ambiguity — 
-  even if the user doesn't explicitly ask for planning. When in doubt, use it.
+name: Task Brain Lite
+description: Use this skill when the user says "/task_brain", "break down this task", "plan this", "decompose this problem", or when a task has multiple moving parts, unclear dependencies, or high ambiguity.
+version: 1.0.0
 ---
 
 # task_brain_lite
