@@ -9,9 +9,15 @@
   "plugins": [
     {
       "name": "kyuna-token-saver",
+      "version": "1.0.0",
       "description": "Token optimization plugin with 13 skills, 1 agent, and session-start hooks for Claude Code.",
-      "source": "./",
-      "category": "productivity"
+      "author": {
+        "name": "kyuna0312",
+        "email": "khatanzorigb@gmail.com"
+      },
+      "source": "https://github.com/kyuna0312/context_guard",
+      "category": "productivity",
+      "tags": ["tokens", "context", "productivity", "hooks", "optimization", "claude-md", "settings"]
     }
   ]
 }
