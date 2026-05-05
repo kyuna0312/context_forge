@@ -6,7 +6,7 @@ version: 1.0.0
 
 # Manage Skills
 
-Audit and reduce skill token overhead. Skills silently consume 1,000-28,000 tokens each when loaded. This skill helps identify, estimate cost of, and disable unnecessary skills.
+Audit and reduce skill token overhead. Skills silently consume 1,000-28,000 tokens each when loaded.
 
 ## Token Cost of Skills
 

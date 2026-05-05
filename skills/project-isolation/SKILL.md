@@ -16,8 +16,6 @@ By default, Claude Code loads:
 - Global `claude.md`
 - All installed plugins
 
-This causes token waste and context pollution when working on one project.
-
 ## Create Project Scope
 
 ### Step 1: Create project-local claude.md
@@ -83,8 +81,6 @@ Create `.claude/settings.local.json` in project root:
   }
 }
 ```
-
-This scopes plugin loading to project needs only.
 
 ## Additional Resources
 

@@ -6,7 +6,7 @@ version: 1.0.0
 
 # Settings Diff
 
-Show a before/after diff of settings.json changes before applying. Ensures user understands exactly what will change. Always run this before writing settings changes.
+Show a before/after diff of settings.json changes before applying. Always run this before writing settings changes.
 
 ## Diff Procedure
 
