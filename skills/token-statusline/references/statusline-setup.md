@@ -50,13 +50,20 @@ Add to `~/.claude/settings.json`:
 
 ### Option A: Standalone (replace existing status line)
 
-Use plugin's `token-status.sh` directly:
+Copy script first (plugin path may change on reinstall):
+
+```bash
+cp "${CLAUDE_PLUGIN_ROOT}/skills/token-statusline/scripts/token-status.sh" ~/.claude/token-status.sh
+chmod +x ~/.claude/token-status.sh
+```
+
+Then wire up:
 
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "bash /home/kyuna/Desktop/kyuna_token_saver/skills/token-statusline/scripts/token-status.sh",
+    "command": "bash ~/.claude/token-status.sh",
     "refreshInterval": 30
   }
 }

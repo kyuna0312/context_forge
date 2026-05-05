@@ -20,10 +20,19 @@ RED="\033[38;2;255;120;120m"      # red — critical
 MUTED="\033[38;2;196;176;216m"    # muted purple — labels
 RESET="\033[0m"
 
-# ── Extract context window data ────────────────────────────────────────────────
-used_pct=$(echo "$input" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('context_window',{}).get('used_percentage',''))" 2>/dev/null)
-remaining_pct=$(echo "$input" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('context_window',{}).get('remaining_percentage',''))" 2>/dev/null)
-cwd=$(echo "$input" | python3 -c "import json,sys; d=json.load(sys.stdin); w=d.get('workspace',{}); print(w.get('current_dir',d.get('cwd','')))" 2>/dev/null)
+# ── Extract all JSON fields in one python3 call ───────────────────────────────
+read -r used_pct cwd rl_pct <<< "$(echo "$input" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+cw = d.get('context_window', {})
+w = d.get('workspace', {})
+rl = d.get('rate_limits', {}).get('5h', {})
+print(
+    cw.get('used_percentage', ''),
+    w.get('current_dir', d.get('cwd', '')),
+    rl.get('used_percentage', '')
+)
+" 2>/dev/null || echo "  ")"
 
 # ── Context window bar ────────────────────────────────────────────────────────
 ctx_bar=""
@@ -87,7 +96,6 @@ fi
 
 # ── Rate limit (if available) ─────────────────────────────────────────────────
 rate_part=""
-rl_pct=$(echo "$input" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('rate_limits',{}).get('5h',{}).get('used_percentage',''))" 2>/dev/null)
 if [ -n "$rl_pct" ]; then
   rl_int=$(printf "%.0f" "$rl_pct")
   if [ "$rl_int" -ge 70 ]; then

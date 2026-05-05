@@ -21,16 +21,12 @@ Rate limit usage appears only when near limits (≥70%) and on Claude.ai account
 
 ## Quick Setup
 
-**Step 1**: Copy plugin script to a stable path (or use in place):
+**Step 1**: Copy plugin script to a stable path (recommended — plugin path may change):
 
 ```bash
-# In-place (works if plugin stays at this path)
-SCRIPT=/home/kyuna/Desktop/kyuna_token_saver/skills/token-statusline/scripts/token-status.sh
-
-# Or copy to permanent location
-cp "$SCRIPT" ~/.claude/token-status.sh
+# Copy to permanent location
+cp "${CLAUDE_PLUGIN_ROOT}/skills/token-statusline/scripts/token-status.sh" ~/.claude/token-status.sh
 chmod +x ~/.claude/token-status.sh
-SCRIPT=~/.claude/token-status.sh
 ```
 
 **Step 2**: Add to `~/.claude/settings.json`:

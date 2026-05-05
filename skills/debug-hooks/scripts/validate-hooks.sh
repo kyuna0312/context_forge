@@ -19,11 +19,11 @@ fi
 
 # Validate JSON syntax
 echo "--- JSON Syntax ---"
-if python3 -c "import json,sys; json.load(open('$HOOKS_FILE'))" 2>/dev/null; then
+if python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$HOOKS_FILE" 2>/dev/null; then
   echo "✓ Valid JSON"
 else
   echo "✗ Invalid JSON"
-  python3 -c "import json,sys; json.load(open('$HOOKS_FILE'))" 2>&1 | head -5
+  python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$HOOKS_FILE" 2>&1 | head -5
   ERRORS=$((ERRORS + 1))
   echo ""
   echo "Fix: Use https://jsonlint.com or:"

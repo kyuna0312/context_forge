@@ -1,7 +1,7 @@
 #!/bin/bash
 # kyuna_token_saver: SessionStart hook
 # Checks claude.md size and reports token cost warnings on session start
-set -euo pipefail
+set -uo pipefail
 
 WARN_WORDS=600
 CRIT_WORDS=1000
@@ -10,10 +10,9 @@ check_file() {
   local path="$1"
   local label="$2"
   if [ -f "$path" ]; then
-    local words
+    local words tokens
     words=$(wc -w < "$path")
-    local tokens
-    tokens=$(echo "$words * 1.3 / 1" | bc 2>/dev/null || echo "$words")
+    tokens=$(( words * 13 / 10 ))
     if [ "$words" -ge "$CRIT_WORDS" ]; then
       echo "⚠ TOKEN SAVER [CRITICAL]: $label is ${words} words (~${tokens} tokens). Run /kyuna_token_saver:optimize-claudemd"
     elif [ "$words" -ge "$WARN_WORDS" ]; then
@@ -34,8 +33,7 @@ fi
 # Check for hook errors in settings
 SETTINGS="$HOME/.claude/settings.json"
 if [ -f "$SETTINGS" ]; then
-  # Validate JSON is parseable
-  if ! python3 -c "import json,sys; json.load(open('$SETTINGS'))" 2>/dev/null; then
+  if ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$SETTINGS" 2>/dev/null; then
     echo "⚠ TOKEN SAVER: settings.json has invalid JSON. Run /kyuna_token_saver:debug-hooks"
   fi
 fi
