@@ -1,5 +1,5 @@
 {
-  "description": "Token saver hooks: check claude.md size and hook errors on session start",
+  "description": "Warn when CLAUDE.md exceeds token budget thresholds on session start.",
   "hooks": {
     "SessionStart": [
       {

@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "kyuna-token-saver",
-      "description": "Token optimization plugin with 12 skills, 1 agent, and session-start hooks for Claude Code.",
+      "description": "Token optimization plugin with 13 skills, 1 agent, and session-start hooks for Claude Code.",
       "source": "./",
       "category": "productivity"
     }
