@@ -1,7 +1,8 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "kyuna-token-saver",
-  "description": "Reduce Claude Code token usage via context reset, settings optimization, skill management, and hook diagnostics.",
+  "version": "1.0.0",
+  "description": "Reduce Claude Code token usage via context reset, settings optimization, skill management, and hook diagnostics",
   "owner": {
     "name": "kyuna0312"
   },
