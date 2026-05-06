@@ -42,7 +42,7 @@ Project (./CLAUDE.md):          [N] words ≈ [N*1.3] tokens  [STATUS]
 Combined constant cost: ~[N] tokens per response
 
 [WARNING if any file is Bloated/Critical]
-Run: /kyuna_token_saver:optimize-claudemd to reduce size
+Run: /context_guard:optimize-claudemd to reduce size
 ```
 
 ## Automatic Session-Start Check

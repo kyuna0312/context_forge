@@ -58,11 +58,19 @@ Configure hook to run before compaction for custom summary logic:
   "PreCompact": [{
     "hooks": [{
       "type": "command",
-      "command": "bash $CLAUDE_PLUGIN_ROOT/scripts/pre-compact.sh",
+      "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/pre-compact.sh",
       "timeout": 15
     }]
   }]
 }
+```
+
+Create `hooks/scripts/pre-compact.sh` with your custom pre-compaction logic, for example:
+
+```bash
+#!/usr/bin/env bash
+# Runs before Claude compacts context. Use to save state, log context usage, etc.
+echo "Compacting context at $(date)" >> ~/.claude/compact.log
 ```
 
 ## Compact Trigger Prompt
