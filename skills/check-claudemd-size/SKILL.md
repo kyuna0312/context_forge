@@ -56,7 +56,7 @@ This skill is called by the SessionStart hook. On session start:
 Warning format:
 ```
 ⚠ TOKEN SAVER: claude.md is [N] words ([STATUS])
-  Run /kyuna_token_saver:optimize-claudemd to reduce by ~[%]%
+  Run /context_guard:optimize-claudemd to reduce by ~[%]%
 ```
 
 ## What Makes claude.md Grow

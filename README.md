@@ -1,6 +1,6 @@
 # context_guard
 
-A Claude Code plugin that reduces token waste and extends context window life. Includes 13 skills, a diagnostic agent, session-start hooks, and a live status line showing context usage.
+A Claude Code plugin that reduces token waste and extends context window life. Includes 14 skills, a diagnostic agent, session-start hooks, and a live status line showing context usage.
 
 ---
 
@@ -21,6 +21,7 @@ A Claude Code plugin that reduces token waste and extends context window life. I
 | `token-statusline` | Adds live context bar to Claude Code status line |
 | `debug-hooks` | Diagnoses broken hook configurations with detailed validation output |
 | `task-brain-lite` | Decomposes complex tasks into prioritized, dependency-aware subtasks |
+| `llm-wiki` | Builds/maintains a persistent wiki Claude references instead of re-reading raw docs — up to 96% token savings on repeated knowledge |
 
 **Agent:** `hook-error-fixer` — diagnoses and fixes broken hook configurations automatically.
 
@@ -156,6 +157,8 @@ Trigger any skill by describing what you want. Examples:
 - *"validate my hooks"* → `debug-hooks`
 - *"break down this task"* → `task-brain-lite`
 - *"fix my hooks"* → triggers `hook-error-fixer` agent
+- *"build a wiki from my docs"* → `llm-wiki`
+- *"stop re-reading docs every session"* → `llm-wiki`
 
 ---
 
@@ -191,6 +194,9 @@ context_guard/
     ├── token-statusline/
     │   └── scripts/
     │       └── token-status.sh  # Status line script (copy to ~/.claude/)
+    ├── llm-wiki/
+    │   └── references/
+    │       └── wiki-patterns.md     # Page templates, multi-project setup
     └── tune-settings/
 ```
 
