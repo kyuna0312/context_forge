@@ -139,6 +139,50 @@ readonly CRIT_WORDS=1000   # red critical
 
 ---
 
+## LTX Output Format
+
+Skills and hooks that emit structured data use **LTX (Low Token eXchange Format)** — a schema-based, pipe-delimited serialization that minimizes token overhead compared to JSON.
+
+### Format
+
+```
+@v1:field1|field2|field3
+value|value|value
+value|value|value
+```
+
+- Header line: `@v1:<schema>` — defines field names
+- Data rows: pipe-delimited values, one per line
+
+### Example — session-start hook output
+
+**stdout (LTX, machine-readable):**
+```
+@v1:file|words|tokens|level
+~/.claude/CLAUDE.md|850|1105|critical
+./CLAUDE.md|320|416|ok
+~/.claude/settings.json|0|0|valid
+```
+
+**stderr (human-readable, only when thresholds exceeded):**
+```
+⚠ TOKEN SAVER [CRITICAL]: ~/.claude/CLAUDE.md is 850 words (~1105 tokens). Run /optimize-claudemd
+```
+
+### Skill Schemas
+
+| Skill | LTX Schema |
+|-------|------------|
+| `estimate-tokens` | `@v1:source\|words\|tokens\|status` |
+| `check-claudemd-size` | `@v1:file\|words\|tokens\|level` |
+| `token-statusline` | `@v1:context_pct\|bar\|md_tokens\|color` |
+| `debug-hooks` | `@v1:hook\|status\|error\|fix` |
+| `tune-settings` | `@v1:setting\|current\|recommended\|action` |
+
+Each skill's `SKILL.md` contains a `## LTX Schema` section with field definitions and examples.
+
+---
+
 ## Skills Quick Reference
 
 Trigger any skill by describing what you want. Examples:
@@ -176,7 +220,8 @@ context_guard/
 │   └── scripts/
 │       └── session-start.sh     # CLAUDE.md size warning on startup
 ├── scripts/
-│   └── install.sh               # Installation helper
+│   ├── install.sh               # Installation helper
+│   └── ltx.sh                   # Shared LTX encoding library (sourced by hooks/scripts)
 └── skills/
     ├── auto-compact/
     ├── check-claudemd-size/
