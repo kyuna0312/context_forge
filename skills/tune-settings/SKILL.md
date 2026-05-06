@@ -72,6 +72,30 @@ On confirmation, write the updated settings file.
 
 **Warning:** Changing global settings affects all Claude Code sessions.
 
+## LTX Schema
+
+Emit structured output as LTX rows when reporting settings analysis results.
+
+```
+@v1:setting|current|recommended|action
+```
+
+| Field | Description |
+|-------|-------------|
+| `setting` | Settings key (e.g. `autoLoadMemory`) |
+| `current` | Current value or `missing` if not set |
+| `recommended` | Recommended value for token savings |
+| `action` | `change`, `keep`, `add` |
+
+Example:
+```
+@v1:setting|current|recommended|action
+autoLoadMemory|true|false|change
+autoLoadSkills|true|false|change
+compactOnContextFull|missing|true|add
+verboseOutput|false|false|keep
+```
+
 ## Additional Resources
 
 - **`references/settings-reference.md`** — Full settings.json reference with token impact ratings

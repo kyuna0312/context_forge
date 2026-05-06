@@ -81,6 +81,29 @@ Based on audit results, recommend in order:
 3. **Memory files > 1,000 words** → Archive old entries
 4. **10+ active plugins** → Disable project-irrelevant plugins
 
+## LTX Schema
+
+Emit structured output as LTX rows when reporting per-source token estimates.
+
+```
+@v1:source|words|tokens|status
+```
+
+| Field | Description |
+|-------|-------------|
+| `source` | File or category (e.g. `~/.claude/CLAUDE.md`, `skills`) |
+| `words` | Raw word count |
+| `tokens` | Estimated tokens (`words * 1.3`, rounded) |
+| `status` | `ok`, `warn` (approaching limit), `critical` (over limit) |
+
+Example:
+```
+@v1:source|words|tokens|status
+~/.claude/CLAUDE.md|850|1105|critical
+./CLAUDE.md|320|416|ok
+skills|2400|3120|warn
+```
+
 ## Additional Resources
 
 - **`references/token-benchmarks.md`** — Token cost benchmarks for common setups

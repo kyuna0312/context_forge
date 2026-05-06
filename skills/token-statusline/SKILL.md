@@ -86,6 +86,27 @@ echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PW
 
 Should print a colored bar with `ctx [███████░░░] 72%` and CLAUDE.md token count.
 
+## LTX Schema
+
+Emit structured output as LTX rows when reporting current status line state.
+
+```
+@v1:context_pct|bar|md_tokens|color
+```
+
+| Field | Description |
+|-------|-------------|
+| `context_pct` | Context window usage percentage (0–100) |
+| `bar` | 10-char visual bar string (e.g. `████████░░`) |
+| `md_tokens` | Estimated tokens loaded from CLAUDE.md files |
+| `color` | `green`, `yellow`, `orange`, `red` based on context % |
+
+Example:
+```
+@v1:context_pct|bar|md_tokens|color
+82|████████░░|650|orange
+```
+
 ## Additional Resources
 
 - **`references/statusline-setup.md`** — Full JSON input schema, all 3 setup options, Lucy Edgerunner patch instructions, troubleshooting
