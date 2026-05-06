@@ -52,11 +52,12 @@ Disabled plugins: [list plugins not needed]
 
 ## Recommended Minimal Skill Set
 
-For most coding sessions, keep only:
-- `coding` — core development
-- `terminal` — shell operations
+Keep only skills actively needed for current work. Disable:
+- Design/SEO/marketing plugin skills during coding sessions
+- Large documentation plugins when not writing docs
+- Any plugin with 5+ skills where you only use 1–2
 
-Disable: design skills, data skills, SEO skills, marketing skills unless actively needed.
+Use `autoLoadSkills: false` in `settings.json` to prevent all skills from loading automatically.
 
 ## Estimate Skill Token Cost
 

@@ -40,7 +40,7 @@ Cause: Wrong event matcher or hook not registered.
 
 Fix procedure:
 1. Read `hooks/hooks.json` or `settings.json` hooks section
-2. Verify event name is exact: `PreToolUse`, `PostToolUse`, `SessionStart`, `Stop`
+2. Verify event name is exact: `PreToolUse`, `PostToolUse`, `SessionStart`, `Stop`, `SubagentStop`, `SessionEnd`, `UserPromptSubmit`, `PreCompact`, `Notification`
 3. Verify matcher regex matches tool names
 4. Test with `claude --debug` to see hook execution logs
 

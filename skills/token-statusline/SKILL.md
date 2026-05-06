@@ -49,7 +49,7 @@ If `settings.json` already has a `statusLine.command`, choose:
 
 - **Replace**: Swap the `command` path to `token-status.sh`
 - **Extend**: Add the bar rendering block to your existing script (see `references/statusline-setup.md` Option B/C)
-- **Patch Lucy Edgerunner** (`~/.claude/statusline-command.sh`): Replace the `ctx_part` block per Option C in references
+- **Extend existing script**: Add the bar rendering block to your existing script (see `references/statusline-setup.md` Option C)
 
 ## Color Thresholds
 
@@ -109,5 +109,5 @@ Example:
 
 ## Additional Resources
 
-- **`references/statusline-setup.md`** — Full JSON input schema, all 3 setup options, Lucy Edgerunner patch instructions, troubleshooting
+- **`references/statusline-setup.md`** — Full JSON input schema, all setup options, troubleshooting
 - **`scripts/token-status.sh`** — Standalone status line script (copy to `~/.claude/` for permanent use)

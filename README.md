@@ -4,26 +4,26 @@ A Claude Code plugin that reduces token waste and extends context window life. I
 
 ---
 
-## What It Does
+## Skills
 
-| Skill | What it saves |
-|-------|--------------|
+| Skill | What it does |
+|-------|-------------|
 | `optimize-claudemd` | Compresses bloated CLAUDE.md — cuts 40–80% of tokens loaded every session |
 | `low-token-mode` | Switches Claude to terse response style — cuts reply tokens by 30–50% |
 | `reset-context` | Safely resets context window when near full — prevents hard stops |
-| `tune-settings` | Diffs and applies token-saving settings (autoLoadMemory, autoLoadSkills, etc.) |
+| `tune-settings` | Diffs and applies token-saving settings (`autoLoadMemory`, `autoLoadSkills`, etc.) |
 | `manage-skills` | Audits loaded skills, disables unused ones — reduces session overhead |
-| `project-isolation` | Scopes skills/hooks to current project only |
+| `project-isolation` | Scopes skills and hooks to current project only |
 | `estimate-tokens` | Estimates tokens in any file before loading it |
-| `auto-compact` | Configures compactOnContextFull — auto-compacts instead of stopping |
+| `auto-compact` | Configures `compactOnContextFull` — auto-compacts instead of stopping |
 | `settings-diff` | Shows before/after diff before writing any settings change |
 | `check-claudemd-size` | Reports CLAUDE.md word/token count with color-coded warnings |
 | `token-statusline` | Adds live context bar to Claude Code status line |
 | `debug-hooks` | Diagnoses broken hook configurations with detailed validation output |
 | `task-brain-lite` | Decomposes complex tasks into prioritized, dependency-aware subtasks |
-| `llm-wiki` | Builds/maintains a persistent wiki Claude references instead of re-reading raw docs — up to 96% token savings on repeated knowledge |
+| `llm-wiki` | Builds a persistent wiki Claude references instead of re-reading raw docs — up to 96% token savings on repeated knowledge |
 
-**Agent:** `hook-error-fixer` — diagnoses and fixes broken hook configurations automatically.
+**Agent:** `hook-error-fixer` — diagnoses and auto-fixes broken hook configurations.
 
 **Hook:** Session-start script that warns when CLAUDE.md exceeds size thresholds.
 
@@ -49,12 +49,6 @@ ctx [████████░░] 82%  │  md:~650t
 git clone https://github.com/kyuna0312/context_guard.git ~/.claude/plugins/context_guard
 ```
 
-Then enable in Claude Code:
-
-```
-/plugins enable context_guard
-```
-
 ### Option B — Clone anywhere, load with --plugin-dir
 
 ```bash
@@ -69,9 +63,9 @@ git clone https://github.com/kyuna0312/context_guard.git ~/context_guard
 bash ~/context_guard/scripts/install.sh
 ```
 
-### Option D — Use in place (Desktop)
+The install script symlinks the plugin into `~/.claude/plugins/context_guard`.
 
-If already cloned to Desktop:
+### Option D — Use in place (Desktop)
 
 ```bash
 claude --plugin-dir ~/Desktop/context_guard
@@ -111,7 +105,7 @@ echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PW
   | bash ~/.claude/token-status.sh
 ```
 
-Should print: `ctx [███████░░░] 72%`
+Expected output: `ctx [███████░░░] 72%`
 
 **Color thresholds:**
 
@@ -126,11 +120,9 @@ Should print: `ctx [███████░░░] 72%`
 
 ## Session-Start Hook
 
-The plugin includes a hook that runs when Claude Code starts and warns if CLAUDE.md is too large.
+Runs automatically when Claude Code starts. Warns if CLAUDE.md exceeds size thresholds.
 
-It fires automatically when the plugin is enabled. No setup needed.
-
-To customize warning thresholds, edit `hooks/scripts/session-start.sh`:
+To customize thresholds, edit `hooks/scripts/session-start.sh`:
 
 ```bash
 readonly WARN_WORDS=600    # yellow warning
@@ -141,7 +133,7 @@ readonly CRIT_WORDS=1000   # red critical
 
 ## LTX Output Format
 
-Skills and hooks that emit structured data use **LTX (Low Token eXchange Format)** — a schema-based, pipe-delimited serialization that minimizes token overhead compared to JSON.
+Skills and hooks emit structured data in **LTX (Low Token eXchange Format)** — a schema-based, pipe-delimited format that minimizes token overhead compared to JSON.
 
 ### Format
 
@@ -185,7 +177,7 @@ Each skill's `SKILL.md` contains a `## LTX Schema` section with field definition
 
 ## Skills Quick Reference
 
-Trigger any skill by describing what you want. Examples:
+Trigger any skill by describing what you want:
 
 - *"optimize my CLAUDE.md"* → `optimize-claudemd`
 - *"switch to low token mode"* → `low-token-mode`
@@ -220,7 +212,7 @@ context_guard/
 │   └── scripts/
 │       └── session-start.sh     # CLAUDE.md size warning on startup
 ├── scripts/
-│   ├── install.sh               # Installation helper
+│   ├── install.sh               # Installation helper (symlinks plugin)
 │   └── ltx.sh                   # Shared LTX encoding library (sourced by hooks/scripts)
 └── skills/
     ├── auto-compact/
@@ -229,6 +221,9 @@ context_guard/
     │   └── scripts/
     │       └── validate-hooks.sh
     ├── estimate-tokens/
+    ├── llm-wiki/
+    │   └── references/
+    │       └── wiki-patterns.md
     ├── low-token-mode/
     ├── manage-skills/
     ├── optimize-claudemd/
@@ -239,9 +234,6 @@ context_guard/
     ├── token-statusline/
     │   └── scripts/
     │       └── token-status.sh  # Status line script (copy to ~/.claude/)
-    ├── llm-wiki/
-    │   └── references/
-    │       └── wiki-patterns.md     # Page templates, multi-project setup
     └── tune-settings/
 ```
 
