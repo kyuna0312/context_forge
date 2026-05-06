@@ -92,6 +92,28 @@ To safely remove a broken hook from settings.json:
 4. Confirm before editing
 5. Remove entry and validate JSON
 
+## LTX Schema
+
+Emit structured output as LTX rows when reporting hook validation results.
+
+```
+@v1:hook|status|error|fix
+```
+
+| Field | Description |
+|-------|-------------|
+| `hook` | Hook identifier or script path |
+| `status` | `ok`, `warn`, `error`, `missing` |
+| `error` | Short error description or `-` if none |
+| `fix` | Suggested fix command/action or `-` if none |
+
+Example:
+```
+@v1:hook|status|error|fix
+SessionStart:session-start.sh|ok|-|-
+SessionStart:broken-hook.sh|error|file not found|recreate or remove hook entry
+```
+
 ## Additional Resources
 
 - **`references/hook-errors.md`** — Full error catalog with root causes and fixes

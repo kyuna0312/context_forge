@@ -1,35 +1,56 @@
 #!/usr/bin/env bash
 # session-start.sh: Warn when CLAUDE.md exceeds token budget thresholds.
-# Runs on SessionStart. Checks global and project CLAUDE.md locations.
+# Runs on SessionStart. Emits LTX rows to stdout, human warnings to stderr.
 set -euo pipefail
+
+# Source shared LTX library
+# shellcheck source=../../scripts/ltx.sh
+source "${CLAUDE_PLUGIN_ROOT}/scripts/ltx.sh"
 
 readonly WARN_WORDS=600
 readonly CRIT_WORDS=1000
+
+# Emit schema header once
+ltx_header "file|words|tokens|level"
 
 check_claudemd_size() {
   local file_path="$1"
   local label="$2"
 
-  [ -f "$file_path" ] || return 0
+  if [ ! -f "$file_path" ]; then
+    return 0
+  fi
 
-  local word_count token_estimate
+  local word_count token_estimate level
   word_count=$(wc -w < "$file_path")
   token_estimate=$(( word_count * 13 / 10 ))
 
   if [ "$word_count" -ge "$CRIT_WORDS" ]; then
-    echo "⚠ TOKEN SAVER [CRITICAL]: $label is ${word_count} words (~${token_estimate} tokens). Run /optimize-claudemd" >&2
+    level="critical"
+    ltx_human "⚠ TOKEN SAVER [CRITICAL]: $label is ${word_count} words (~${token_estimate} tokens). Run /optimize-claudemd"
   elif [ "$word_count" -ge "$WARN_WORDS" ]; then
-    echo "⚠ TOKEN SAVER [WARNING]: $label is ${word_count} words (~${token_estimate} tokens). Consider optimizing." >&2
+    level="warn"
+    ltx_human "⚠ TOKEN SAVER [WARNING]: $label is ${word_count} words (~${token_estimate} tokens). Consider optimizing."
+  else
+    level="ok"
   fi
+
+  ltx_row "$file_path" "$word_count" "$token_estimate" "$level"
 }
 
 validate_settings_json() {
   local settings_path="$HOME/.claude/settings.json"
 
-  [ -f "$settings_path" ] || return 0
+  if [ ! -f "$settings_path" ]; then
+    ltx_row "$settings_path" "0" "0" "missing"
+    return 0
+  fi
 
   if ! python3 -c "import json, sys; json.load(open(sys.argv[1]))" "$settings_path" 2>/dev/null; then
-    echo "⚠ TOKEN SAVER: settings.json has invalid JSON. Run /debug-hooks" >&2
+    ltx_row "$settings_path" "0" "0" "invalid"
+    ltx_human "⚠ TOKEN SAVER: settings.json has invalid JSON. Run /debug-hooks"
+  else
+    ltx_row "$settings_path" "0" "0" "valid"
   fi
 }
 

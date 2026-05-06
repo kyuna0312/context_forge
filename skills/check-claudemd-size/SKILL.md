@@ -68,6 +68,28 @@ Common causes of bloat:
 - Long prose explanations instead of bullet rules
 - Examples that should be in `references/` files
 
+## LTX Schema
+
+Emit structured output as LTX rows when reporting file sizes.
+
+```
+@v1:file|words|tokens|level
+```
+
+| Field | Description |
+|-------|-------------|
+| `file` | Path to the claude.md file checked |
+| `words` | Raw word count |
+| `tokens` | Estimated tokens (`words * 1.3`, rounded) |
+| `level` | `ok`, `warn` (600–999 words), `critical` (≥1000 words) |
+
+Example:
+```
+@v1:file|words|tokens|level
+~/.claude/CLAUDE.md|850|1105|critical
+./CLAUDE.md|320|416|ok
+```
+
 ## Additional Resources
 
 - **`references/claudemd-templates.md`** — Lean templates by project type (shared with optimize-claudemd skill)
