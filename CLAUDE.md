@@ -9,12 +9,14 @@ context_guard is a Claude Code plugin for reducing token waste. It ships 14 skil
 ## Installation
 
 ```bash
-# Symlink into Claude plugins
+# Symlink into Claude plugins (preferred)
 bash scripts/install.sh
 
 # Or load in place
 claude --plugin-dir /path/to/context_guard
 ```
+
+`install.sh` creates `~/.claude/plugins/context_guard -> <repo>` and copies `scripts/statusline-command.sh` to `~/.claude/statusline-command.sh`.
 
 Requires `python3` at runtime (used by hooks and the status line script).
 
@@ -47,9 +49,9 @@ Hook and skill scripts must use `$CLAUDE_PLUGIN_ROOT` (not hardcoded paths) when
 2. Validates `~/.claude/settings.json` JSON syntax
 3. Emits LTX rows with schema `@v1:file|words|tokens|level`
 
-### Token status line
+### Status line script
 
-`skills/token-statusline/scripts/token-status.sh` reads JSON from stdin (Claude Code injects `context_window.used_percentage`) and prints a colored bar. The install script copies it to `~/.claude/token-status.sh`. Requires Claude Code v2.1.97+ for `refreshInterval` support.
+`scripts/statusline-command.sh` reads JSON from stdin and renders a colored one-line status showing: dir, git branch, model, context-window bar, CLAUDE.md token estimate, and rate-limit %. Token estimate uses `words × 1.3`. Color thresholds: green → yellow (50%/390t) → orange (75%/780t) → red (90%/1300t). Requires Claude Code v2.1.97+ for `refreshInterval` support.
 
 ## Adding a New Skill
 
@@ -57,11 +59,28 @@ Hook and skill scripts must use `$CLAUDE_PLUGIN_ROOT` (not hardcoded paths) when
 2. If the skill emits structured data, add a `## LTX Schema` section and use `scripts/ltx.sh` functions
 3. Add optional `references/` docs and `scripts/` as needed — no registration required; Claude Code auto-discovers `SKILL.md` files
 
+Several skills currently have only a `references/` doc and no `SKILL.md` yet (e.g., `auto-compact`, `check-claudemd-size`, `debug-hooks`, `estimate-tokens`, `manage-skills`, `project-isolation`, `settings-diff`, `tune-settings`). These are stubs awaiting full skill content.
+
+## Adding a New Agent
+
+Create `agents/<name>.md` with YAML frontmatter:
+```yaml
+---
+name: <name>
+model: inherit   # or claude-opus-4-5, etc.
+color: yellow    # terminal color hint
+tools: ["Read", "Write", "Grep", "Glob", "Bash"]
+description: >-
+  One-line trigger description
+---
+```
+Follow with `## When to use` examples and the agent's full instructions.
+
 ## Adding a New Hook
 
 Add a new event block to `hooks/hooks.json`. Use `$CLAUDE_PLUGIN_ROOT` for all script paths. Valid event names: `PreToolUse`, `PostToolUse`, `SessionStart`, `Stop`, `SubagentStop`, `SessionEnd`, `UserPromptSubmit`, `PreCompact`, `Notification`.
 
-## Debugging Hooks
+## Debugging
 
 ```bash
 # Syntax-check a hook script
@@ -74,6 +93,9 @@ CLAUDE_PLUGIN_ROOT=$(pwd) bash hooks/scripts/session-start.sh
 python3 -m json.tool ~/.claude/settings.json
 
 # Test status line script
-echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PWD"'"}}' \
-  | bash skills/token-statusline/scripts/token-status.sh
+echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PWD"'"},"model":{"display_name":"Sonnet"}}' \
+  | bash scripts/statusline-command.sh
+
+# Verify plugin symlink
+ls -la ~/.claude/plugins/context_guard
 ```
