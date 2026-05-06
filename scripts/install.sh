@@ -25,11 +25,16 @@ fi
 ln -s "$PLUGIN_DIR" "${CLAUDE_PLUGINS_DIR}/${PLUGIN_NAME}"
 echo "Linked: ${CLAUDE_PLUGINS_DIR}/${PLUGIN_NAME} -> $PLUGIN_DIR"
 
+# Install statusline script
+STATUSLINE_SRC="$PLUGIN_DIR/scripts/statusline-command.sh"
+STATUSLINE_DEST="${HOME}/.claude/statusline-command.sh"
+if [ -f "$STATUSLINE_SRC" ]; then
+  cp "$STATUSLINE_SRC" "$STATUSLINE_DEST"
+  chmod +x "$STATUSLINE_DEST"
+  echo "Installed statusline: $STATUSLINE_DEST"
+fi
+
 echo ""
 echo "Done! Plugin '$PLUGIN_NAME' installed."
 echo "Start Claude Code with: claude"
 echo "Or use in place: claude --plugin-dir $PLUGIN_DIR"
-echo ""
-echo "Optional: set up token status line:"
-echo "  cp $PLUGIN_DIR/skills/token-statusline/scripts/token-status.sh ~/.claude/token-status.sh"
-echo "  chmod +x ~/.claude/token-status.sh"
