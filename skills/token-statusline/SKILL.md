@@ -43,13 +43,12 @@ chmod +x ~/.claude/token-status.sh
 
 **Step 3**: Restart Claude Code. Status line appears at bottom of terminal.
 
-## If You Have an Existing Status Line
+## If an Existing Status Line Is Already Configured
 
 If `settings.json` already has a `statusLine.command`, choose:
 
 - **Replace**: Swap the `command` path to `token-status.sh`
-- **Extend**: Add the bar rendering block to your existing script (see `references/statusline-setup.md` Option B/C)
-- **Extend existing script**: Add the bar rendering block to your existing script (see `references/statusline-setup.md` Option C)
+- **Extend**: Add the bar rendering block to the existing script (see `references/statusline-setup.md` Option B/C)
 
 ## Color Thresholds
 

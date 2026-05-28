@@ -1,5 +1,5 @@
 {
-  "description": "Warn when CLAUDE.md exceeds token budget thresholds on session start.",
+  "description": "Warn when CLAUDE.md exceeds token budget thresholds on session start, and record file changes to the forge changelog after Write/Edit.",
   "hooks": {
     "SessionStart": [
       {
@@ -9,6 +9,17 @@
             "type": "command",
             "command": "bash \"$CLAUDE_PLUGIN_ROOT/hooks/scripts/session-start.sh\"",
             "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PLUGIN_ROOT/hooks/scripts/record-change.mjs\""
           }
         ]
       }

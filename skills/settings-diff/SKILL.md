@@ -83,6 +83,3 @@ Backup saved to: [file].backup.[timestamp]
 
 Always create a `.backup` copy before writing changes.
 
-## Additional Resources
-
-- **`references/settings-reference.md`** — Full settings key reference (shared with tune-settings skill)

@@ -65,7 +65,7 @@ Configure hook to run before compaction for custom summary logic:
 }
 ```
 
-Create `hooks/scripts/pre-compact.sh` with your custom pre-compaction logic, for example:
+Create `hooks/scripts/pre-compact.sh` with custom pre-compaction logic, for example:
 
 ```bash
 #!/usr/bin/env bash

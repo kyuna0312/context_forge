@@ -57,7 +57,7 @@ For Medium complexity, produce a flat ordered list — no tree, no depth:
 3. `subtask_three` — reason
 
 Rules:
-- Max 4 items. If you need more, re-evaluate as High complexity.
+- Max 4 items. For more than that, re-evaluate as High complexity.
 - Each item has a one-phrase rationale for its position.
 - After the list, emit the same compact state table format as SPLIT.
 

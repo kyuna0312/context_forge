@@ -1,10 +1,23 @@
 {
-  "name": "context_guard",
-  "version": "1.2.0",
-  "description": "Reduce Claude Code token usage via context reset, settings optimization, skill management, and hook diagnostics",
+  "name": "context-forge",
+  "version": "0.1.0",
+  "description": "Claude Code plugin combining token-waste reduction (skills, hooks, status line) with DB-backed project scaffolding, changelog tracking, and template back-mapping via MCP.",
   "author": {
     "name": "kyuna0312",
     "email": "khatanzorigb@gmail.com"
   },
-  "keywords": ["token", "optimization", "context", "performance", "claude-md", "settings", "hooks"]
+  "keywords": [
+    "token",
+    "optimization",
+    "context",
+    "performance",
+    "claude-md",
+    "settings",
+    "hooks",
+    "scaffold",
+    "template",
+    "mcp",
+    "postgres",
+    "changelog"
+  ]
 }

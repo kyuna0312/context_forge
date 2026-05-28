@@ -1,6 +1,9 @@
-# context_guard
+# context-forge
 
-A Claude Code plugin that reduces token waste and extends context window life. Includes 14 skills, a diagnostic agent, session-start hooks, and a live status line showing context usage.
+A Claude Code plugin that combines two things:
+
+1. **Token-waste reduction** — 14 skills, a diagnostic agent, a session-start hook, and a live status line showing context usage.
+2. **DB-backed project scaffolding** — `/scaffold`, `/changelog`, `/sync-template` slash commands plus an MCP server (`forge-db`) that stores templates, file content, and pinned dependency versions in Postgres so the model never invents them.
 
 ---
 
@@ -34,10 +37,48 @@ ctx [████████░░] 82%  │  md:~650t
 
 ---
 
+## Forge — DB-backed scaffolding
+
+Three slash commands backed by the `forge-db` MCP server:
+
+| Command          | What it does                                                |
+|------------------|-------------------------------------------------------------|
+| `/scaffold`      | Create a project from a template stored in Postgres         |
+| `/changelog`     | Show recorded file/dependency changes for a project         |
+| `/sync-template` | Review recurring manual additions and fold them back in     |
+
+**Why facts live in Postgres:** templates, file contents, and exact dependency versions are read verbatim from the DB through MCP tools. The model copies — it does not invent template names or guess versions — and scaffolds run a real `typecheck`/`build` before being declared good. Retrieval + validation instead of fine-tuning.
+
+A `PostToolUse` hook (`record-change.mjs`) appends every `Write` / `Edit` to the `changelogs` table; `/sync-template` later analyses those rows and suggests template improvements.
+
+### Forge setup
+
+```bash
+# 1. Install MCP server deps
+cd mcp && npm install && cd ..
+
+# 2. Point at your remote Postgres
+export FORGE_DATABASE_URL="postgres://user:pass@host:5432/forge"
+
+# 3. Create the schema (and an example template to test with)
+psql "$FORGE_DATABASE_URL" -f mcp/db/schema.sql
+psql "$FORGE_DATABASE_URL" -f mcp/db/seed-example.sql
+```
+
+`.mcp.json` reads `${FORGE_DATABASE_URL}` from your environment, so make sure that variable is exported in the shell where you launch Claude Code. Without it, the forge half is inert — the token-saver half keeps working.
+
+### MCP tools (`forge-db`)
+
+`list_templates`, `get_template`, `register_project`, `record_change`, `get_changelog`, `compute_suggestions`, `apply_suggestion`.
+
+---
+
 ## Requirements
 
 - Claude Code v2.1.97 or later (for `refreshInterval` support)
 - `python3` — used by the token status line script and hook validation
+- `node` ≥ 18 — runs the MCP server and the `record-change` hook
+- Postgres reachable via `$FORGE_DATABASE_URL` (forge half only — token-saver half does not need it)
 
 ---
 
@@ -201,19 +242,32 @@ Trigger any skill by describing what you want:
 ## Project Structure
 
 ```
-context_guard/
+context-forge/
 ├── .claude-plugin/
 │   ├── plugin.json              # Plugin manifest
 │   └── marketplace.json         # Marketplace metadata
+├── .mcp.json                    # Registers the forge-db MCP server
 ├── agents/
 │   └── hook-error-fixer.md      # Auto-diagnoses broken hooks
+├── commands/
+│   ├── scaffold.md              # /scaffold — create project from DB template
+│   ├── changelog.md             # /changelog — show recorded project changes
+│   └── sync-template.md         # /sync-template — apply template improvements
 ├── hooks/
-│   ├── hooks.json               # Hook event configuration
+│   ├── hooks.json               # SessionStart + PostToolUse hook config
 │   └── scripts/
-│       └── session-start.sh     # CLAUDE.md size warning on startup
+│       ├── session-start.sh     # CLAUDE.md size warning on startup
+│       └── record-change.mjs    # Appends Write/Edit events to changelogs
+├── mcp/
+│   ├── server.mjs               # forge-db MCP server (7 tools)
+│   ├── package.json             # @modelcontextprotocol/sdk + pg
+│   └── db/
+│       ├── schema.sql           # Postgres tables for templates + changelogs
+│       └── seed-example.sql     # One example template (node-ts-basic)
 ├── scripts/
 │   ├── install.sh               # Installation helper (symlinks plugin)
-│   └── ltx.sh                   # Shared LTX encoding library (sourced by hooks/scripts)
+│   ├── ltx.sh                   # Shared LTX encoding library
+│   └── statusline-command.sh    # Status line renderer
 └── skills/
     ├── auto-compact/
     ├── check-claudemd-size/

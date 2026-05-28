@@ -1,0 +1,11 @@
+{
+  "name": "project-forge-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server for the project-forge Claude Code plugin",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "pg": "^8.13.0"
+  }
+}

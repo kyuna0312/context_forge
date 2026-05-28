@@ -90,6 +90,3 @@ Example:
 ./CLAUDE.md|320|416|ok
 ```
 
-## Additional Resources
-
-- **`references/claudemd-templates.md`** — Lean templates by project type (shared with optimize-claudemd skill)
