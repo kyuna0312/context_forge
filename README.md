@@ -216,29 +216,6 @@ Each skill's `SKILL.md` contains a `## LTX Schema` section with field definition
 
 ---
 
-## Skills Quick Reference
-
-Trigger any skill by describing what you want:
-
-- *"optimize my CLAUDE.md"* → `optimize-claudemd`
-- *"switch to low token mode"* → `low-token-mode`
-- *"reset context"* → `reset-context`
-- *"check my settings"* → `tune-settings`
-- *"how many tokens is this file?"* → `estimate-tokens`
-- *"set up auto compact"* → `auto-compact`
-- *"how big is my CLAUDE.md?"* → `check-claudemd-size`
-- *"show me settings diff before saving"* → `settings-diff`
-- *"add token counter to status line"* → `token-statusline`
-- *"audit my loaded skills"* → `manage-skills`
-- *"isolate this project"* → `project-isolation`
-- *"validate my hooks"* → `debug-hooks`
-- *"break down this task"* → `task-brain-lite`
-- *"fix my hooks"* → triggers `hook-error-fixer` agent
-- *"build a wiki from my docs"* → `llm-wiki`
-- *"stop re-reading docs every session"* → `llm-wiki`
-
----
-
 ## Project Structure
 
 ```
