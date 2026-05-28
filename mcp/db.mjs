@@ -1,9 +1,25 @@
-// Shared Postgres connection-string resolution for the forge-db MCP server
-// and the record-change PostToolUse hook. Accepts FORGE_DATABASE_URL first
-// (canonical) and falls back to DATABASE_URL so the same module works whether
-// invoked from .mcp.json (which sets DATABASE_URL from ${FORGE_DATABASE_URL})
-// or invoked directly with FORGE_DATABASE_URL in the environment.
+// Shared Postgres connection-string resolution and lazy pool/query helper
+// for the forge-db MCP server. The record-change PostToolUse hook also
+// imports dbUrl() from here but uses its own one-shot pg.Client, so the
+// pool below is lazy — it is only instantiated on the first call to q().
+
+import pg from "pg";
 
 export function dbUrl() {
   return process.env.FORGE_DATABASE_URL || process.env.DATABASE_URL;
+}
+
+let _pool;
+function pool() {
+  if (!_pool) _pool = new pg.Pool({ connectionString: dbUrl() });
+  return _pool;
+}
+
+export async function q(text, params = []) {
+  const client = await pool().connect();
+  try {
+    return (await client.query(text, params)).rows;
+  } finally {
+    client.release();
+  }
 }
