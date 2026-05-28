@@ -12,7 +12,7 @@ This skill complements the `/changelog` and `/sync-template` slash commands. The
 
 ## Required environment
 
-The forge half of context-forge depends on:
+The forge half of context_forge depends on:
 
 - `FORGE_DATABASE_URL` exported in the shell that launched Claude Code
 - The `forge-db` MCP server reachable (registered in `.mcp.json`)

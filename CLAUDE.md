@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-context-forge is a Claude Code plugin that combines two things in one package:
+context_forge is a Claude Code plugin that combines two things in one package:
 
 1. **Token-waste reduction** — 14 skills, one diagnostic agent, a session-start hook, and a status line script.
 2. **DB-backed project scaffolding** — three slash commands (`/scaffold`, `/changelog`, `/sync-template`), a `PostToolUse` hook, and an MCP server (`forge-db`) that exposes Postgres-stored templates so the model never invents template content or guesses dependency versions.
@@ -18,10 +18,10 @@ Bash scripts + markdown for the token-saver half. Node + Postgres (via `pg`) for
 bash scripts/install.sh
 
 # Or load in place
-claude --plugin-dir /path/to/context-forge
+claude --plugin-dir /path/to/context_forge
 ```
 
-`install.sh` creates `~/.claude/plugins/context-forge -> <repo>` and copies `scripts/statusline-command.sh` to `~/.claude/statusline-command.sh`.
+`install.sh` creates `~/.claude/plugins/context_forge -> <repo>` and copies `scripts/statusline-command.sh` to `~/.claude/statusline-command.sh`.
 
 Requires `python3` (hooks + status line) and `node` ≥18 (MCP server + record-change hook). For the forge half: `npm install` inside `mcp/` and export `FORGE_DATABASE_URL` before launching Claude Code.
 
@@ -141,7 +141,7 @@ echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PW
   | bash scripts/statusline-command.sh
 
 # Verify plugin symlink
-ls -la ~/.claude/plugins/context-forge
+ls -la ~/.claude/plugins/context_forge
 ```
 
 ## Coding conduct (Karpathy guidelines)

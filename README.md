@@ -1,4 +1,4 @@
-# context-forge
+# context_forge
 
 A Claude Code plugin that combines two things:
 
@@ -87,29 +87,29 @@ psql "$FORGE_DATABASE_URL" -f mcp/db/seed-example.sql
 ### Option A — Clone directly into Claude plugins
 
 ```bash
-git clone https://github.com/kyuna0312/context-forge.git ~/.claude/plugins/context-forge
+git clone https://github.com/kyuna0312/context_forge.git ~/.claude/plugins/context_forge
 ```
 
 ### Option B — Clone anywhere, load with --plugin-dir
 
 ```bash
-git clone https://github.com/kyuna0312/context-forge.git ~/context-forge
-claude --plugin-dir ~/context-forge
+git clone https://github.com/kyuna0312/context_forge.git ~/context_forge
+claude --plugin-dir ~/context_forge
 ```
 
 ### Option C — Use the install script
 
 ```bash
-git clone https://github.com/kyuna0312/context-forge.git ~/context-forge
-bash ~/context-forge/scripts/install.sh
+git clone https://github.com/kyuna0312/context_forge.git ~/context_forge
+bash ~/context_forge/scripts/install.sh
 ```
 
-The install script symlinks the plugin into `~/.claude/plugins/context-forge`.
+The install script symlinks the plugin into `~/.claude/plugins/context_forge`.
 
 ### Option D — Use in place (Desktop)
 
 ```bash
-claude --plugin-dir ~/Desktop/context-forge
+claude --plugin-dir ~/Desktop/context_forge
 ```
 
 ---
@@ -121,7 +121,7 @@ The status line shows live context window usage at the bottom of the terminal.
 **Step 1 — Copy script to permanent location:**
 
 ```bash
-cp ~/.claude/plugins/context-forge/skills/token-statusline/scripts/token-status.sh ~/.claude/token-status.sh
+cp ~/.claude/plugins/context_forge/skills/token-statusline/scripts/token-status.sh ~/.claude/token-status.sh
 chmod +x ~/.claude/token-status.sh
 ```
 
@@ -242,7 +242,7 @@ Trigger any skill by describing what you want:
 ## Project Structure
 
 ```
-context-forge/
+context_forge/
 ├── .claude-plugin/
 │   ├── plugin.json              # Plugin manifest
 │   └── marketplace.json         # Marketplace metadata

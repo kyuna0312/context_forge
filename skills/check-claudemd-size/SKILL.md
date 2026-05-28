@@ -42,7 +42,7 @@ Project (./CLAUDE.md):          [N] words ≈ [N*1.3] tokens  [STATUS]
 Combined constant cost: ~[N] tokens per response
 
 [WARNING if any file is Bloated/Critical]
-Run: /context-forge:optimize-claudemd to reduce size
+Run: /context_forge:optimize-claudemd to reduce size
 ```
 
 ## Automatic Session-Start Check
@@ -56,7 +56,7 @@ This skill is called by the SessionStart hook. On session start:
 Warning format:
 ```
 ⚠ TOKEN SAVER: claude.md is [N] words ([STATUS])
-  Run /context-forge:optimize-claudemd to reduce by ~[%]%
+  Run /context_forge:optimize-claudemd to reduce by ~[%]%
 ```
 
 ## What Makes claude.md Grow

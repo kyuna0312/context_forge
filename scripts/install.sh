@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PLUGIN_NAME="context-forge"
+PLUGIN_NAME="context_forge"
 CLAUDE_PLUGINS_DIR="${HOME}/.claude/plugins"
 
 echo "Installing $PLUGIN_NAME..."
