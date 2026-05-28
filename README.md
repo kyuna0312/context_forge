@@ -2,7 +2,7 @@
 
 A Claude Code plugin that combines two things:
 
-1. **Token-waste reduction** — 14 skills, a diagnostic agent, a session-start hook, and a live status line showing context usage.
+1. **Token-waste reduction** — 15 skills, a diagnostic agent, a session-start hook, and a live status line showing context usage.
 2. **DB-backed project scaffolding** — `/scaffold`, `/changelog`, `/sync-template` slash commands plus an MCP server (`forge-db`) that stores templates, file content, and pinned dependency versions in Postgres so the model never invents them.
 
 ---
