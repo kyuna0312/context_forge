@@ -1,3 +1,4 @@
 .remember/logs/
 .remember/tmp/
 .remember/
+mcp/node_modules/
