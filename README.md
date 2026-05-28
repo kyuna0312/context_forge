@@ -25,6 +25,7 @@ A Claude Code plugin that combines two things:
 | `debug-hooks` | Diagnoses broken hook configurations with detailed validation output |
 | `task-brain-lite` | Decomposes complex tasks into prioritized, dependency-aware subtasks |
 | `llm-wiki` | Builds a persistent wiki Claude references instead of re-reading raw docs — up to 96% token savings on repeated knowledge |
+| `forge-changelog` | Reads the forge changelog and runs the template back-mapping loop (wraps `forge-db` MCP tools `get_changelog`, `compute_suggestions`, `apply_suggestion`) |
 
 **Agent:** `hook-error-fixer` — diagnoses and auto-fixes broken hook configurations.
 
@@ -233,11 +234,21 @@ context_forge/
 ├── hooks/
 │   ├── hooks.json               # SessionStart + PostToolUse hook config
 │   └── scripts/
-│       ├── session-start.sh     # CLAUDE.md size warning on startup
-│       └── record-change.mjs    # Appends Write/Edit events to changelogs
+│       └── session-start.sh     # CLAUDE.md size warning on startup
 ├── mcp/
-│   ├── server.mjs               # forge-db MCP server (7 tools)
+│   ├── server.mjs               # forge-db MCP server — SDK wiring (38 lines)
+│   ├── db.mjs                   # dbUrl() + lazy pg.Pool + q() helper
+│   ├── record-change.mjs        # PostToolUse hook: Write/Edit → changelogs
 │   ├── package.json             # @modelcontextprotocol/sdk + pg
+│   ├── tools/
+│   │   ├── index.mjs            # Ordered tool registry
+│   │   ├── list_templates.mjs
+│   │   ├── get_template.mjs
+│   │   ├── register_project.mjs
+│   │   ├── record_change.mjs
+│   │   ├── get_changelog.mjs
+│   │   ├── compute_suggestions.mjs
+│   │   └── apply_suggestion.mjs
 │   └── db/
 │       ├── schema.sql           # Postgres tables for templates + changelogs
 │       └── seed-example.sql     # One example template (node-ts-basic)
@@ -252,6 +263,9 @@ context_forge/
     │   └── scripts/
     │       └── validate-hooks.sh
     ├── estimate-tokens/
+    ├── forge-changelog/
+    │   └── references/
+    │       └── mcp-tool-reference.md
     ├── llm-wiki/
     │   └── references/
     │       └── wiki-patterns.md
