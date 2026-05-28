@@ -18,10 +18,10 @@ Bash scripts + markdown for the token-saver half. Node + Postgres (via `pg`) for
 bash scripts/install.sh
 
 # Or load in place
-claude --plugin-dir /path/to/context_guard
+claude --plugin-dir /path/to/context-forge
 ```
 
-`install.sh` creates `~/.claude/plugins/context_guard -> <repo>` and copies `scripts/statusline-command.sh` to `~/.claude/statusline-command.sh`.
+`install.sh` creates `~/.claude/plugins/context-forge -> <repo>` and copies `scripts/statusline-command.sh` to `~/.claude/statusline-command.sh`.
 
 Requires `python3` (hooks + status line) and `node` ≥18 (MCP server + record-change hook). For the forge half: `npm install` inside `mcp/` and export `FORGE_DATABASE_URL` before launching Claude Code.
 
@@ -141,7 +141,7 @@ echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PW
   | bash scripts/statusline-command.sh
 
 # Verify plugin symlink
-ls -la ~/.claude/plugins/context_guard
+ls -la ~/.claude/plugins/context-forge
 ```
 
 ## Coding conduct (Karpathy guidelines)

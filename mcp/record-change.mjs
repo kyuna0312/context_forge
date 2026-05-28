@@ -3,9 +3,11 @@
 // Claude Code passes the hook a JSON payload on stdin describing the tool call.
 // We stay deliberately small and never block the tool — on any error we exit 0.
 //
-// Env: FORGE_DATABASE_URL  (same DB the MCP server uses)
+// Env: FORGE_DATABASE_URL (canonical) or DATABASE_URL (fallback) —
+// same DB the MCP server uses; resolution lives in ./db.mjs.
 
 import pg from "pg";
+import { dbUrl } from "./db.mjs";
 
 async function main() {
   const raw = await read(process.stdin);
@@ -21,7 +23,7 @@ async function main() {
     tool === "Write" ? "file_created" :
     tool === "Edit"  ? "file_edited"  : "file_edited";
 
-  const url = process.env.FORGE_DATABASE_URL;
+  const url = dbUrl();
   if (!url) return;
 
   const client = new pg.Client({ connectionString: url });

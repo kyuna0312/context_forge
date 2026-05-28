@@ -111,7 +111,7 @@ Recommendation: [action]
 | Reference 3 wiki pages | ~600 tokens |
 | **Savings** | **~96%** |
 
-## Integration with context_guard
+## Integration with context-forge
 
 - Run `/estimate-tokens` after wiki setup to measure baseline
 - Add `wiki/` reference to CLAUDE.md using `/optimize-claudemd`

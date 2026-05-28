@@ -1,23 +1,23 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "context_guard",
-  "version": "1.2.0",
-  "description": "Reduce Claude Code token usage via context reset, settings optimization, skill management, and hook diagnostics",
+  "name": "context-forge",
+  "version": "0.1.0",
+  "description": "Token-waste reduction (skills, hooks, status line) combined with DB-backed project scaffolding, changelog tracking, and template back-mapping via MCP.",
   "owner": {
     "name": "kyuna0312"
   },
   "plugins": [
     {
-      "name": "context_guard",
-      "version": "1.2.0",
-      "description": "Token optimization plugin with 14 skills, 1 agent, and session-start hooks for Claude Code.",
+      "name": "context-forge",
+      "version": "0.1.0",
+      "description": "Two-half plugin: 15 skills + 1 agent + session-start hook for token-waste reduction, plus a forge-db MCP server, 3 slash commands, and a PostToolUse hook for DB-backed scaffolding.",
       "author": {
         "name": "kyuna0312",
         "email": "khatanzorigb@gmail.com"
       },
-      "source": "https://github.com/kyuna0312/context_guard",
+      "source": "https://github.com/kyuna0312/context-forge",
       "category": "productivity",
-      "tags": ["tokens", "context", "productivity", "hooks", "optimization", "claude-md", "settings"]
+      "tags": ["tokens", "context", "productivity", "hooks", "optimization", "claude-md", "settings", "scaffold", "template", "mcp", "postgres"]
     }
   ]
 }

@@ -12,9 +12,10 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import pg from "pg";
+import { dbUrl } from "./db.mjs";
 
 const { Pool } = pg;
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({ connectionString: dbUrl() });
 
 async function q(text, params = []) {
   const client = await pool.connect();
