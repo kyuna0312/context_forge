@@ -24,12 +24,14 @@ if ! command -v claude >/dev/null 2>&1; then
   exit 1
 fi
 
-# Each step falls back to its "already exists" counterpart, so re-running
-# this script after pulling updates refreshes the installed snapshot.
-claude plugin marketplace add "$PLUGIN_DIR" 2>/dev/null \
-  || claude plugin marketplace update "$PLUGIN_NAME"
-claude plugin install "$PLUGIN_NAME@$PLUGIN_NAME" 2>/dev/null \
-  || claude plugin update "$PLUGIN_NAME"
+# add/install exit 0 even when already present, so update must run
+# unconditionally — that's what refreshes the snapshot on re-runs.
+# NOTE: updates are version-driven; bump .claude-plugin/*.json versions
+# for local changes to propagate.
+claude plugin marketplace add "$PLUGIN_DIR" 2>/dev/null || true
+claude plugin marketplace update "$PLUGIN_NAME"
+claude plugin install "$PLUGIN_NAME@$PLUGIN_NAME" 2>/dev/null || true
+claude plugin update "$PLUGIN_NAME@$PLUGIN_NAME"
 
 # Clean up the legacy symlink older versions of this script created — it was
 # never discovered as a plugin.

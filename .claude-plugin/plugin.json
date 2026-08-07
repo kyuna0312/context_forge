@@ -1,6 +1,6 @@
 {
   "name": "context_forge",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Claude Code plugin combining token-waste reduction (skills, hooks, status line) with DB-backed project scaffolding, changelog tracking, and template back-mapping via MCP.",
   "author": {
     "name": "kyuna0312",
