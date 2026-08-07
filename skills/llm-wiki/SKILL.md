@@ -1,7 +1,7 @@
 ---
 name: LLM Wiki
 description: This skill should be used when the user says "build a wiki", "maintain a wiki", "ingest docs into wiki", "query my wiki", "set up llm wiki", "wiki-based knowledge base", "stop re-reading docs every session", "persistent knowledge base", or "compress my docs into wiki pages".
-version: 1.0.0
+version: 1.1.0
 ---
 
 # LLM Wiki
@@ -30,8 +30,8 @@ Create wiki directory at project root or `~/.claude/wiki/` for global:
 
 ```bash
 mkdir -p wiki
-echo "# Wiki Index\n\n## Pages\n" > wiki/index.md
-echo "# Ingest Log\n" > wiki/log.md
+printf '# Wiki Index\n\n## Pages\n' > wiki/index.md
+printf '# Ingest Log\n' > wiki/log.md
 ```
 
 Add to `CLAUDE.md`:
@@ -50,6 +50,8 @@ When user provides a doc, URL, or file to ingest:
 
 1. Read the source
 2. Identify 3-5 key concepts worth persisting
+   — if the source is smaller than the wiki page would be (a short README,
+   a config file), skip it: re-reading it is cheaper than maintaining a copy
 3. Create or update `wiki/[topic].md` per concept (one page per topic)
 4. Update `wiki/index.md` with new pages
 5. Append to `wiki/log.md`: `[DATE] INGEST: [source] → [pages updated]`

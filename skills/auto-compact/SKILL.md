@@ -1,7 +1,7 @@
 ---
 name: Auto Compact
-description: This skill should be used when the user says "auto compact", "enable auto compact", "compact on context full", "automatic context compression", "prevent context limit errors", "set up auto compaction", or "context keeps hitting limit".
-version: 1.0.0
+description: This skill should be used when the user says "auto compact", "enable auto compact", "compact on context full", "automatic context compression", "prevent context limit errors", "set up auto compaction", or "context keeps hitting limit". Note auto-compaction is on by default — check whether it was explicitly disabled before "enabling" anything.
+version: 1.1.0
 ---
 
 # Auto Compact
@@ -28,16 +28,21 @@ Compaction discards:
 
 ### Option 1: Settings File
 
-Add to `~/.claude/settings.json` (global) or `.claude/settings.json` (project):
+Auto-compaction is **on by default** (`autoCompactEnabled: true`). To make it
+explicit or tune when it fires, add to `~/.claude/settings.json` (global) or
+`.claude/settings.json` (project):
 
 ```json
 {
-  "compactOnContextFull": true,
-  "compactThreshold": 0.85
+  "autoCompactEnabled": true,
+  "autoCompactWindow": 500000
 }
 ```
 
-`compactThreshold: 0.85` = trigger compaction at 85% context usage.
+`autoCompactWindow` (100,000–1,000,000 tokens) sets the context fullness at
+which compaction triggers; unset, Claude Code uses a model-specific default.
+The `/autocompact` command configures it interactively — prefer that over
+hand-editing.
 
 ### Option 2: During Session
 
@@ -92,8 +97,8 @@ Summarize everything else. Continue where we left off.
 
 Check current context fill level:
 - Claude Code shows context usage in status line
-- At 70%+ usage: consider voluntary compaction
-- At 85%+ usage: auto-compact triggers (if enabled)
+- At 70%+ usage: consider voluntary `/compact`
+- Auto-compact fires when usage reaches `autoCompactWindow` (or the model default if unset)
 
 ## Additional Resources
 

@@ -1,20 +1,26 @@
 ---
 name: Manage Skills
-description: This skill should be used when the user says "list loaded skills", "disable skills", "skills are wasting tokens", "too many skills loaded", "which skills are active", "unload skills", "skill token cost", or "skills killing my budget".
-version: 1.0.0
+description: This skill should be used when the user says "list loaded skills", "disable skills", "skills are wasting tokens", "too many skills loaded", "which skills are active", "unload skills", "skill token cost", or "skills killing my budget". Skill bodies lazy-load — only descriptions cost tokens every session; size the fix to that reality.
+version: 1.1.0
 ---
 
 # Manage Skills
 
-Audit and reduce skill token overhead. Skills silently consume 1,000-28,000 tokens each when loaded.
+Audit and reduce skill token overhead.
 
-## Token Cost of Skills
+## Token Cost of Skills — the Real Model
 
-Each loaded skill SKILL.md body costs tokens every response:
-- Small skill: ~500-1,000 tokens
-- Medium skill: ~1,500-3,000 tokens  
-- Large skill: ~3,000-5,000 tokens
-- Plugin with 10 skills: potentially 15,000-50,000 tokens constant overhead
+Skill bodies are **lazy-loaded**: only the frontmatter `name` + `description`
+of every installed skill loads at session start; the SKILL.md body loads only
+when the skill is actually invoked. So:
+
+- Constant cost per installed skill: its description (~50–150 tokens)
+- Plugin with 10 skills: ~500–1,500 tokens of descriptions, every session
+- Body cost (can be thousands of tokens): paid only on invocation
+
+The lever is therefore the *number of installed skills* (description
+overhead) and *bloated descriptions* — not body size. A 5,000-word body you
+never invoke costs you nothing.
 
 ## Audit Loaded Skills
 
@@ -35,40 +41,36 @@ Then read and report:
 
 ## Disable Unnecessary Skills
 
-### Disable entire plugin:
+The real mechanisms (there is no `autoLoadSkills` setting — do not invent
+one):
 
-Edit `~/.claude/settings.json` and set plugin enabled to false, or remove plugin from active list.
-
-### Request selective loading:
-
-Tell user to add to their `claude.md`:
-
-```markdown
-## Skill Loading Policy
-Only load skills when explicitly requested with /skill-name.
-Do not auto-load skills based on conversation context.
-Disabled plugins: [list plugins not needed]
-```
+- **Remove a plugin**: `/plugin remove <name>` — removes its skills' descriptions from every session
+- **Bundled skills**: set `"disableBundledSkills": true` in `settings.json` to skip Claude Code's built-in skills at startup
+- **Skill invoked when unwanted**: tighten its `description` (add "Do NOT use for…" anti-triggers) rather than trying to block loading
 
 ## Recommended Minimal Skill Set
 
-Keep only skills actively needed for current work. Disable:
-- Design/SEO/marketing plugin skills during coding sessions
+Keep only plugins actively needed for current work. Remove:
+- Design/SEO/marketing plugins during coding sessions
 - Large documentation plugins when not writing docs
 - Any plugin with 5+ skills where you only use 1–2
 
-Use `autoLoadSkills: false` in `settings.json` to prevent all skills from loading automatically.
-
 ## Estimate Skill Token Cost
 
-For each skill directory, estimate cost:
+Constant cost = descriptions. Measure those, not bodies:
 
 ```bash
-# Count words in all SKILL.md files
+# Words in each skill's frontmatter description (constant, every session)
+for f in ~/.claude/plugins/*/skills/*/SKILL.md; do
+  awk '/^description:/{f=1} f&&/^[a-z]+:/&&!/^description:/{exit} f' "$f" | wc -w | xargs echo "$f"
+done
+
+# Body word counts (cost only when invoked)
 find ~/.claude/plugins -name "SKILL.md" -exec wc -w {} \; | sort -n
 ```
 
-Skills over 3,000 words = high cost. Consider disabling or requesting optimization.
+A body over 3,000 words is only a problem for skills you invoke often —
+suggest moving detail into `references/` files, which load on demand.
 
 ## Additional Resources
 

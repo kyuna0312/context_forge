@@ -1,71 +1,81 @@
-# settings.json Full Reference — Token Impact Ratings
+# settings.json Reference — Token Impact Ratings
+
+Only documented keys appear here. An unknown key in settings.json is
+silently ignored — recommending one is a placebo optimization.
 
 ## Token-Affecting Settings
 
-### autoLoadMemory
+### autoMemoryEnabled
 - **Default**: true
-- **Token impact**: HIGH — loads all `.remember/*.md` files every session
-- **Recommended**: `false` — load memory manually when needed
-- **Trade-off**: You must explicitly reference memory content
+- **Token impact**: MEDIUM — auto memory content loads each session
+- **Recommended**: `false` if you don't rely on auto memory
+- **Trade-off**: You must explicitly reference remembered content
 
-### autoLoadSkills  
+### disableBundledSkills
+- **Default**: false (bundled skills active)
+- **Token impact**: MEDIUM — bundled skills' descriptions load at startup
+- **Recommended**: `true` if you don't use Claude Code's built-in skills
+- **Trade-off**: Bundled skills (except `/doctor`) unavailable
+
+### autoCompactEnabled
 - **Default**: true
-- **Token impact**: VERY HIGH — loads all installed skill SKILL.md bodies
-- **Recommended**: `false` — skills load via trigger phrases only
-- **Trade-off**: Skills won't auto-activate; use explicit trigger phrases
+- **Token impact**: NEUTRAL (prevents hard stops at context limit)
+- **Recommended**: keep `true`
 
-### compactOnContextFull
-- **Default**: false
-- **Token impact**: NEUTRAL (prevents hard stops)
-- **Recommended**: `true` — auto-compact instead of hitting limit
-- **Trade-off**: Compaction loses some conversation detail
+### autoCompactWindow
+- **Default**: model-specific
+- **Range**: 100,000–1,000,000 tokens
+- **Token impact**: controls *when* auto-compaction fires
+- **Recommended**: set via the `/autocompact` command, not by hand
 
-### verboseOutput
-- **Default**: false (varies)
-- **Token impact**: MEDIUM — verbose mode adds extra explanation tokens
-- **Recommended**: `false` for token savings
+### disabledMcpjsonServers
+- **Default**: `[]`
+- **Token impact**: MEDIUM per server — a rejected server's tool schemas never load
+- **Recommended**: list `.mcp.json` servers this machine doesn't need
 
-### plugins.autoEnable
-- **Default**: true
-- **Token impact**: MEDIUM — all installed plugins active by default
-- **Recommended**: `false` — enable plugins per-project explicitly
+## What Does NOT Exist
+
+There is no `autoLoadSkills`, `autoLoadMemory`, `compactOnContextFull`,
+`compactThreshold`, `verboseOutput`, or `plugins.autoEnable`. Skill bodies
+lazy-load by design — only frontmatter descriptions cost tokens every
+session, so no setting is needed to "stop skills loading".
 
 ## Full Low-Token Config
 
 ```json
 {
-  "autoLoadMemory": false,
-  "autoLoadSkills": false,
-  "compactOnContextFull": true,
-  "verboseOutput": false,
-  "plugins": {
-    "autoEnable": false,
-    "enabled": []
-  }
+  "autoMemoryEnabled": false,
+  "disableBundledSkills": true,
+  "autoCompactEnabled": true,
+  "disabledMcpjsonServers": ["unused-server-name"]
 }
 ```
 
 ## Per-Project Settings
 
-Create `.claude/settings.json` in project root to override global:
+Create `.claude/settings.json` (shared) or `.claude/settings.local.json`
+(personal) in the project root to override global:
 
 ```json
 {
-  "plugins": {
-    "enabled": ["plugin-name-relevant-to-this-project"]
-  },
-  "autoLoadMemory": false
+  "autoMemoryEnabled": false,
+  "disabledMcpjsonServers": ["server-not-needed-here"]
 }
 ```
 
-## Token Cost Estimates Per Setting
+Plugins are not toggled via settings — manage them with `/plugin install`
+and `/plugin remove`.
 
-| Setting | On | Off | Savings |
-|---------|-----|-----|---------|
-| autoLoadMemory (10 memory files avg) | ~3,000 tokens | 0 | ~3,000/response |
-| autoLoadSkills (10 skills avg) | ~15,000 tokens | 0 | ~15,000/response |
-| verboseOutput | ~200-500 extra | 0 | ~200-500/response |
-| 5 active plugins | ~2,000 tokens | 0 | ~2,000/response |
+## Where the Tokens Actually Go
+
+| Source | Constant cost | Lever |
+|--------|---------------|-------|
+| CLAUDE.md (global + project) | words × 1.3 | `/context_forge:optimize-claudemd` |
+| Skill descriptions (~100t each) | count × ~100 | `/plugin remove` unused plugins |
+| Auto memory | varies | `autoMemoryEnabled: false` |
+| MCP tool schemas | varies per server | `disabledMcpjsonServers` |
+
+CLAUDE.md is usually the biggest line item — check it first.
 
 ## Backup Before Editing
 

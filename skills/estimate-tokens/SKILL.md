@@ -1,7 +1,7 @@
 ---
 name: Estimate Tokens
 description: This skill should be used when the user says "estimate token usage", "how many tokens am I using", "token cost of my setup", "audit token budget", "what's eating my context", "token usage breakdown", or "how expensive is my session".
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Estimate Tokens
@@ -27,19 +27,21 @@ wc -w ./CLAUDE.md 2>/dev/null || echo "No project CLAUDE.md"
 
 Report: `CLAUDE.md: ~[words] words ≈ [words * 1.3] tokens`
 
-### Step 2: Scan All Loaded Skills
+### Step 2: Scan Installed Skills
 
 ```bash
 find ~/.claude/plugins -name "SKILL.md" -exec wc -w {} \; 2>/dev/null | sort -rn | head -20
 ```
 
-Sum the word counts. Multiply by 1.3 for token estimate.
+Skill bodies lazy-load — only frontmatter descriptions are a constant cost
+(~50–150 tokens each, every session). Report *description count × ~100* as
+the constant estimate; body word counts × 1.3 are the per-invocation cost.
 
 ### Step 3: Scan Memory Files
 
 ```bash
 wc -w ~/.claude/memory/*.md 2>/dev/null
-find . -path ".remember/*.md" -exec wc -w {} \; 2>/dev/null
+find .remember -name "*.md" -exec wc -w {} \; 2>/dev/null
 ```
 
 ### Step 4: Count Active Plugins
@@ -59,7 +61,7 @@ TOKEN USAGE AUDIT
 =================
 claude.md (global):    ~[N] tokens
 claude.md (project):   ~[N] tokens
-Skills loaded:         ~[N] tokens  ([X] skills)
+Skill descriptions:    ~[N] tokens  ([X] skills, constant)
 Memory files:          ~[N] tokens
 ─────────────────────────────────
 TOTAL CONSTANT COST:   ~[N] tokens per response
@@ -76,10 +78,10 @@ Recommendation: [action to reduce]
 
 Based on audit results, recommend in order:
 
-1. **Skills > 3,000 tokens** → Disable if not actively used
-2. **claude.md > 500 words** → Run optimize-claudemd skill
-3. **Memory files > 1,000 words** → Archive old entries
-4. **10+ active plugins** → Disable project-irrelevant plugins
+1. **claude.md > 500 words** → Run optimize-claudemd skill (usually the biggest constant cost)
+2. **Memory files > 1,000 words** → Archive old entries
+3. **10+ installed plugins** → `/plugin remove` project-irrelevant ones (each skill's description is constant overhead)
+4. **Frequently-invoked skill with 3,000+ word body** → Move detail to `references/` files
 
 ## LTX Schema
 

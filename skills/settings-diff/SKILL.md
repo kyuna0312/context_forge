@@ -1,7 +1,7 @@
 ---
 name: Settings Diff
-description: This skill should be used when the user says "show settings diff", "what changed in settings", "compare settings before after", "settings optimization preview", "preview settings changes", or "show me what tune-settings will change".
-version: 1.0.0
+description: This skill should be used when the user says "show settings diff", "what changed in settings", "compare settings before after", "settings optimization preview", "preview settings changes", or "show me what tune-settings will change". Only documented settings keys appear in diffs — never invented ones.
+version: 1.1.0
 ---
 
 # Settings Diff
@@ -20,7 +20,10 @@ Read all relevant settings files:
 
 ### Step 2: Compute Proposed Changes
 
-Based on optimization goals, compute the minimal diff needed. Never change settings not related to the stated goal.
+Based on optimization goals, compute the minimal diff needed. Never change
+settings not related to the stated goal, and **never propose a key that
+isn't in the official settings reference** — an unknown key is silently
+ignored, so the diff would promise savings it can't deliver.
 
 ### Step 3: Present Diff
 
@@ -33,13 +36,12 @@ File: ~/.claude/settings.json
 
 BEFORE                           AFTER
 ─────────────────────────────────────────────────────
-"autoLoadMemory": true      →    "autoLoadMemory": false
-"autoLoadSkills": true      →    "autoLoadSkills": false
-[not present]               →    "compactOnContextFull": true
+"autoMemoryEnabled": true    →   "autoMemoryEnabled": false
+[not present]                →   "disableBundledSkills": true
 
 Impact:
   Token reduction: ~[N] tokens per response (~[%]%)
-  Behavior change: Skills no longer auto-load. Use trigger phrases to load manually.
+  Behavior change: Auto memory off; bundled skills skipped at startup.
   Reversible: Yes (edit settings.json to revert)
 ```
 
@@ -62,12 +64,12 @@ SETTINGS DIFF — 2 files
 
 [1/2] ~/.claude/settings.json
 ──────────────────────────────
-  "autoLoadMemory": true → false
-  + "compactOnContextFull": true
+  "autoMemoryEnabled": true → false
+  + "disableBundledSkills": true
 
 [2/2] ./.claude/settings.local.json  
 ──────────────────────────────────────
-  + "plugins.autoEnable": false
+  + "disabledMcpjsonServers": ["unused-server"]
 
 Apply both changes? (yes/no/select)
 ```

@@ -1,7 +1,7 @@
 ---
 name: Debug Hooks
 description: This skill should be used when the user says "startup hook error", "hook not working", "debug hooks", "fix hook error", "SessionStart error", "hook script failing", "node:internal/modules error", "diagnose hook", or sees hook-related errors in Claude Code.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Debug Hooks
@@ -37,6 +37,12 @@ Fix procedure:
 ### Error: Hook silently does nothing
 
 Cause: Wrong event matcher or hook not registered.
+
+Gotcha specific to this plugin: `mcp/record-change.mjs` swallows **all**
+errors and exits 0 by design (it must never block Write/Edit). "Silent" for
+that hook usually means `FORGE_DATABASE_URL` is unset or `mcp/node_modules`
+is missing — run it manually with the command from CLAUDE.md's verify table
+to see the real error.
 
 Fix procedure:
 1. Read `hooks/hooks.json` or `settings.json` hooks section
@@ -118,3 +124,4 @@ SessionStart:broken-hook.sh|error|file not found|recreate or remove hook entry
 
 - **`references/hook-errors.md`** — Full error catalog with root causes and fixes
 - **`scripts/validate-hooks.sh`** — Script to validate all hook configs
+- **`agents/hook-error-fixer.md`** — for multi-step diagnosis, hand off to this agent instead of debugging inline

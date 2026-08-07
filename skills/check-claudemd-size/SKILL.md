@@ -1,7 +1,7 @@
 ---
 name: Check Claude.md Size
 description: This skill should be used when the user says "check claude.md size", "is my claude.md too big", "claude.md token cost", "how big is claude.md", or when triggered automatically on session start to warn about oversized claude.md files.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Check Claude.md Size
@@ -47,7 +47,10 @@ Run: /context_forge:optimize-claudemd to reduce size
 
 ## Automatic Session-Start Check
 
-This skill is called by the SessionStart hook. On session start:
+The SessionStart hook (`hooks/scripts/session-start.sh`) performs this same
+check automatically — it does not invoke this skill. Use the skill for
+on-demand checks mid-session; don't re-run it right after session start,
+the hook already reported. On session start the hook:
 
 1. Check all claude.md file sizes
 2. If any file > 600 words: print warning

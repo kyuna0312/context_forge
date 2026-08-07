@@ -1,7 +1,7 @@
 ---
 name: Tune Settings
-description: This skill should be used when the user says "optimize settings.json", "tune settings for low tokens", "settings.json for performance", "disable auto memory", "configure for token savings", "minimal context window settings", or "settings taking too many tokens".
-version: 1.0.0
+description: This skill should be used when the user says "optimize settings.json", "tune settings for low tokens", "settings.json for performance", "disable auto memory", "configure for token savings", "minimal context window settings", or "settings taking too many tokens". Only proposes documented settings keys — never invented ones.
+version: 1.1.0
 ---
 
 # Tune Settings
@@ -20,48 +20,49 @@ Read all found files.
 
 ## Step 2: Analyze Current Settings
 
-Identify token-costly settings:
+Identify token-costly configuration. Only these keys are real — **never
+propose a key you cannot find in the official settings reference; a
+fabricated key is silently ignored and the "optimization" is a placebo:**
 
 | Setting | Cost | Recommendation |
 |---------|------|----------------|
-| `autoLoadMemory: true` | High | Set to `false` |
-| `autoLoadSkills: true` | Very High | Set to `false` |
-| Verbose logging enabled | Medium | Disable |
-| Large `contextWindow` | High | Reduce to needed size |
+| `autoMemoryEnabled: true` (default) | Medium | `false` if auto memory isn't used |
+| `disableBundledSkills` unset | Medium | `true` to skip bundled skills at startup |
+| Unused MCP servers in `.mcp.json` | Medium | Add to `disabledMcpjsonServers` |
+| `autoCompactWindow` unset | Low | Tune via `/autocompact` if compaction fires too late |
 | Hook scripts that read files | Medium | Audit hooks |
-| Multiple MCP servers active | Medium | Disable unused |
+| Unused plugins | Low–Medium | `/plugin remove <name>` (not a settings key) |
+
+Note: skill *bodies* lazy-load — only frontmatter descriptions cost tokens
+every session. The biggest constant cost is usually CLAUDE.md itself; check
+that first (`/context_forge:check-claudemd-size`) before touching settings.
 
 ## Step 3: Apply Token-Saving Config
 
-Recommended low-token `settings.json`:
+Recommended low-token `settings.json` (real keys only):
 
 ```json
 {
-  "autoLoadMemory": false,
-  "autoLoadSkills": false,
-  "compactOnContextFull": true,
-  "verboseOutput": false,
-  "plugins": {
-    "autoEnable": false
-  }
+  "autoMemoryEnabled": false,
+  "disableBundledSkills": true,
+  "autoCompactEnabled": true,
+  "disabledMcpjsonServers": ["unused-server-name"]
 }
 ```
 
 Key settings explained:
-- `autoLoadMemory: false` — Prevents `.remember/` files from loading every session
-- `autoLoadSkills: false` — Skills load only when explicitly triggered
-- `compactOnContextFull: true` — Auto-compact instead of erroring at context limit
-- `plugins.autoEnable: false` — Plugins require explicit activation
+- `autoMemoryEnabled: false` — Disables auto memory loading each session
+- `disableBundledSkills: true` — Skips Claude Code's bundled skills at startup
+- `autoCompactEnabled: true` — Auto-compact instead of erroring at context limit (default, keep it)
+- `disabledMcpjsonServers` — Rejects listed `.mcp.json` servers so their tool schemas never load
 
 ## Step 4: Show Diff and Confirm
 
 Display before/after diff:
 ```diff
-- "autoLoadMemory": true,
-+ "autoLoadMemory": false,
-- "autoLoadSkills": true,
-+ "autoLoadSkills": false,
-+ "compactOnContextFull": true,
+- "autoMemoryEnabled": true,
++ "autoMemoryEnabled": false,
++ "disableBundledSkills": true,
 ```
 
 Ask user to confirm scope: project settings or global settings.
@@ -82,7 +83,7 @@ Emit structured output as LTX rows when reporting settings analysis results.
 
 | Field | Description |
 |-------|-------------|
-| `setting` | Settings key (e.g. `autoLoadMemory`) |
+| `setting` | Settings key (e.g. `autoMemoryEnabled`) |
 | `current` | Current value or `missing` if not set |
 | `recommended` | Recommended value for token savings |
 | `action` | `change`, `keep`, `add` |
@@ -90,10 +91,9 @@ Emit structured output as LTX rows when reporting settings analysis results.
 Example:
 ```
 @v1:setting|current|recommended|action
-autoLoadMemory|true|false|change
-autoLoadSkills|true|false|change
-compactOnContextFull|missing|true|add
-verboseOutput|false|false|keep
+autoMemoryEnabled|true|false|change
+disableBundledSkills|missing|true|add
+autoCompactEnabled|true|true|keep
 ```
 
 ## Additional Resources

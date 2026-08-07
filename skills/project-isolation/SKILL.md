@@ -1,7 +1,7 @@
 ---
 name: Project Isolation
-description: This skill should be used when the user says "isolate project context", "project scope only", "exclude other projects", "global context is leaking", "Claude remembers wrong project", "isolate session", or "context from wrong project".
-version: 1.0.0
+description: This skill should be used when the user says "isolate project context", "project scope only", "exclude other projects", "global context is leaking", "Claude remembers wrong project", "isolate session", or "context from wrong project". Uses only documented settings keys plus prompt-level scoping.
+version: 1.1.0
 ---
 
 # Project Isolation
@@ -10,11 +10,10 @@ Constrain Claude's context to only the current project. Prevents cross-project m
 
 ## The Problem
 
-By default, Claude Code loads:
-- Global memory files (`~/.claude/memory/`)
-- All session history
-- Global `claude.md`
-- All installed plugins
+By default, every session in this project still carries:
+- Global `~/.claude/CLAUDE.md`
+- Auto memory (when `autoMemoryEnabled` is on, the default)
+- Frontmatter descriptions of every installed plugin's skills
 
 ## Create Project Scope
 
@@ -69,18 +68,21 @@ After applying, Claude should confirm:
 
 If Claude references another project, repeat isolation prompt.
 
-## Per-Project Plugin Config
+## Per-Project Config
 
-Create `.claude/settings.local.json` in project root:
+Create `.claude/settings.local.json` in project root with the real isolation
+levers (there is no per-project plugin enable/disable settings key — plugins
+are managed with the `/plugin` command):
 
 ```json
 {
-  "plugins": {
-    "enabled": ["plugin-relevant-to-this-project"],
-    "disabled": ["unrelated-plugin-1", "unrelated-plugin-2"]
-  }
+  "autoMemoryEnabled": false,
+  "disabledMcpjsonServers": ["server-not-needed-here"]
 }
 ```
+
+- `autoMemoryEnabled: false` — no auto memory in this project's sessions
+- `disabledMcpjsonServers` — rejects listed `.mcp.json` servers so their tool schemas never load here
 
 ## Additional Resources
 

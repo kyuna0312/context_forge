@@ -31,47 +31,37 @@ Target: < 100 words, < 130 tokens.
 
 ## Project settings.json Template
 
+Only documented keys (there is no per-project plugin toggle or
+`autoLoadSkills` — plugins are managed with `/plugin`, and skill bodies
+lazy-load anyway):
+
 ```json
 {
-  "plugins": {
-    "enabled": ["plugin-relevant-to-this-project"]
-  },
-  "autoLoadMemory": false,
-  "autoLoadSkills": false
+  "autoMemoryEnabled": false,
+  "disabledMcpjsonServers": ["server-not-needed-here"]
 }
 ```
 
 ### What to set per-project
 
-**autoLoadSkills: false** when:
-- Project uses only 1-2 specific skills
-- Load them via trigger phrase instead
+**autoMemoryEnabled: false** when:
+- Auto memory content isn't relevant to this project
+- Reference remembered content manually instead
 
-**plugins.enabled: [specific]** when:
-- Only some plugins relevant
-- Reduces token load from plugin skill files
-
-**autoLoadMemory: false** when:
-- Memory files not relevant to this project
-- Load manually: "recall [topic]"
+**disabledMcpjsonServers: [names]** when:
+- The project's `.mcp.json` (or a global one) registers servers this
+  project never uses — their tool schemas stop loading
 
 ## Token Savings from Isolation
 
-### Before isolation (global settings)
-```
-Global CLAUDE.md: 800 words = ~1,040 tokens
-10 active plugins: ~10,000 tokens
-5 memory files: ~3,000 tokens
-Total: ~14,040 tokens per session
-```
+The dominant lever is CLAUDE.md size — measure with
+`/context_forge:estimate-tokens` before and after instead of trusting
+projected numbers:
 
-### After isolation (project settings)
 ```
-Project CLAUDE.md: 80 words = ~104 tokens
-2 relevant plugins: ~2,000 tokens
-0 memory files (manual load)
-Total: ~2,104 tokens per session
-Savings: ~11,936 tokens/session
+Global CLAUDE.md: 800 words = ~1,040 tokens constant
+Project CLAUDE.md at 80 words = ~104 tokens constant
+Plus: skill descriptions of removed plugins, disabled MCP schemas
 ```
 
 ## Multi-Project Setup Pattern
@@ -80,16 +70,16 @@ Savings: ~11,936 tokens/session
 ~/
 ├── .claude/
 │   ├── CLAUDE.md          # Global: coding style only
-│   └── settings.json      # Global: autoLoad all false
+│   └── settings.json      # Global: autoMemoryEnabled false
 └── projects/
     ├── web-app/
     │   ├── CLAUDE.md      # Project: Next.js rules
     │   └── .claude/
-    │       └── settings.json  # Project: enable web plugin only
+    │       └── settings.json  # Project: disable data-pipeline MCP servers
     └── data-pipeline/
         ├── CLAUDE.md      # Project: Python/data rules
         └── .claude/
-            └── settings.json  # Project: enable data plugin only
+            └── settings.json  # Project: disable web MCP servers
 ```
 
 ## Global CLAUDE.md Best Practices

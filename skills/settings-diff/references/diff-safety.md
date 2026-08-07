@@ -33,20 +33,21 @@ Show changes clearly before applying:
 ```
 Current settings.json:
 {
-  "autoLoadMemory": true,        ← will change
-  "autoLoadSkills": true,        ← will change
-  "compactOnContextFull": false  ← will change
+  "autoMemoryEnabled": true      ← will change
 }
 
 Proposed changes:
 {
-  "autoLoadMemory": false,       ← saves ~3,000 tokens
-  "autoLoadSkills": false,       ← saves ~15,000 tokens  
-  "compactOnContextFull": true   ← prevents hard stops
+  "autoMemoryEnabled": false,    ← auto memory off
+  "disableBundledSkills": true   ← bundled skills skipped at startup
 }
 
-Token savings: ~18,000 tokens/session
+Token savings: ~[measure, don't guess] tokens/session
 ```
+
+Only documented keys may appear in a diff. An unknown key is silently
+ignored by Claude Code, so proposing one promises savings that never
+materialize.
 
 ## Settings Merge vs Replace
 
@@ -64,14 +65,10 @@ Write entire new file. Loses any keys not explicitly included.
 
 ```json
 {
-  "autoLoadMemory": false,
-  "autoLoadSkills": false,
-  "compactOnContextFull": true,
-  "verboseOutput": false,
-  "plugins": {
-    "autoEnable": false,
-    "enabled": ["plugin-name"]
-  }
+  "autoMemoryEnabled": false,
+  "disableBundledSkills": true,
+  "autoCompactEnabled": true,
+  "disabledMcpjsonServers": ["unused-server"]
 }
 ```
 
@@ -79,11 +76,10 @@ Write entire new file. Loses any keys not explicitly included.
 
 | Setting | Change | Risk |
 |---------|--------|------|
-| autoLoadMemory | false | Low — manual load still works |
-| autoLoadSkills | false | Low — trigger phrases still load skills |
-| compactOnContextFull | true | Low — improves reliability |
-| verboseOutput | false | Low — less text output |
-| plugins.autoEnable | false | Medium — new plugins won't auto-enable |
+| autoMemoryEnabled | false | Low — memory can still be referenced manually |
+| disableBundledSkills | true | Low — bundled skills (except /doctor) unavailable |
+| autoCompactEnabled | true | Low — it's the default; keep it |
+| disabledMcpjsonServers | [names] | Medium — listed servers' tools become unavailable |
 
 All changes are reversible by editing settings.json.
 
@@ -105,9 +101,8 @@ if settings_path.exists():
 
 # Apply changes (merge, don't replace)
 changes = {
-    "autoLoadMemory": False,
-    "autoLoadSkills": False,
-    "compactOnContextFull": True
+    "autoMemoryEnabled": False,
+    "disableBundledSkills": True
 }
 existing.update(changes)
 

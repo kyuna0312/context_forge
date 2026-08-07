@@ -13,26 +13,29 @@ Loses:
 - Intermediate reasoning steps
 - Verbose explanations already given
 
-## compactOnContextFull Setting
+## The Real Settings
+
+Auto-compaction is **on by default**. The documented keys:
 
 ```json
 {
-  "compactOnContextFull": true
+  "autoCompactEnabled": true,
+  "autoCompactWindow": 500000
 }
 ```
 
-**Without this**: Session hard-stops at limit. All work lost. Must restart manually.
+**`autoCompactEnabled: false`**: session hard-stops at the context limit —
+only set false deliberately.
 
-**With this**: Auto-compacts and continues. Work preserved in summary.
+**`autoCompactWindow`** (100,000–1,000,000 tokens): the fullness at which
+compaction fires; unset, Claude Code uses a model-specific default. Configure
+it with the `/autocompact` command rather than hand-editing.
 
 ## When Compaction Triggers
 
-Approximate context limits:
-- Claude Opus 4: ~200k tokens
-- Claude Sonnet 4: ~200k tokens  
-- Claude Haiku: ~200k tokens
-
-Compaction triggers at ~80-90% of limit.
+Context limits are model-specific — read the live number from the status
+line or `/context` rather than assuming one. Compaction fires when usage
+reaches `autoCompactWindow` (or the model default).
 
 ## PreCompact Hook (Advanced)
 
@@ -67,7 +70,7 @@ echo "Current working directory: $CLAUDE_PROJECT_DIR"
 
 | Situation | Use |
 |-----------|-----|
-| Long session, work ongoing | compactOnContextFull: true |
+| Long session, work ongoing | keep autoCompactEnabled (default) |
 | Starting fresh after completion | /reset-context |
 | Switching to unrelated task | New session |
 | Context polluted with errors | Manual reset |
@@ -90,19 +93,18 @@ Before context fills, create a `CONTEXT.md` checkpoint:
 
 Compaction will include this file in summary, giving better continuity.
 
-## Settings to Reduce Need for Compaction
+## Reducing the Need for Compaction
 
-These settings reduce token consumption, extending sessions before compaction:
+Cut constant context cost so sessions last longer between compactions:
 
 ```json
 {
-  "autoLoadSkills": false,
-  "autoLoadMemory": false,
-  "compactOnContextFull": true
+  "autoMemoryEnabled": false,
+  "disableBundledSkills": true
 }
 ```
 
-With skills/memory off:
-- Save ~10-20k tokens/session on loading
-- Sessions last proportionally longer
-- Fewer compactions needed
+Plus the non-settings levers, usually bigger:
+- Trim CLAUDE.md (`/context_forge:optimize-claudemd`)
+- Remove unused plugins (`/plugin remove`)
+- Disable unused MCP servers (`disabledMcpjsonServers`)
