@@ -11,7 +11,7 @@ context_forge is a Claude Code plugin combining two halves:
 
 Bash + markdown for the token-saver half; Node ESM + Postgres (`pg`) for the forge half. Tests: zero-dep `node --test` suite in `tests/`. No build system.
 
-**Install**: `bash scripts/install.sh` (symlinks into `~/.claude/plugins/`, copies + backs up the statusline script) or `claude --plugin-dir <repo>`. Requires `python3` and `node` ≥18. Forge half additionally: `cd mcp && npm install` + `FORGE_DATABASE_URL` exported before launching Claude Code.
+**Install**: `bash scripts/install.sh` — registers the repo as a local plugin marketplace + installs (a bare symlink under `~/.claude/plugins` is NOT discovered), and copies/backs up the statusline script. Dev: `claude --plugin-dir <repo>`. Requires `python3`, `node` ≥18; forge half also needs `cd mcp && npm install` + `FORGE_DATABASE_URL` exported at launch.
 
 ---
 

@@ -89,32 +89,32 @@ psql "$FORGE_DATABASE_URL" -f mcp/db/seed-example.sql
 
 ## Installation
 
-### Option A — Clone directly into Claude plugins
+Plugins install through the Claude Code marketplace — a bare clone or
+symlink under `~/.claude/plugins` is **not** discovered.
 
-```bash
-git clone https://github.com/kyuna0312/context_forge.git ~/.claude/plugins/context_forge
-```
-
-### Option B — Clone anywhere, load with --plugin-dir
-
-```bash
-git clone https://github.com/kyuna0312/context_forge.git ~/context_forge
-claude --plugin-dir ~/context_forge
-```
-
-### Option C — Use the install script
+### Option A — Install script (recommended)
 
 ```bash
 git clone https://github.com/kyuna0312/context_forge.git ~/context_forge
 bash ~/context_forge/scripts/install.sh
 ```
 
-The install script symlinks the plugin into `~/.claude/plugins/context_forge`, copies the status line script to `~/.claude/` (backing up a modified copy first), and warns if `node`/`python3` are missing. Re-run it after pulling plugin updates so the statusline copy stays current.
+Registers the repo as a local plugin marketplace, installs the plugin,
+copies the status line script to `~/.claude/` (backing up a modified copy
+first), and warns if `node`/`python3` are missing. The install is a
+snapshot — re-run the script after pulling repo updates.
 
-### Option D — Use in place (Desktop)
+### Option B — Straight from GitHub (no clone)
 
 ```bash
-claude --plugin-dir ~/Desktop/context_forge
+claude plugin marketplace add kyuna0312/context_forge
+claude plugin install context_forge@context_forge
+```
+
+### Option C — Load in place (development)
+
+```bash
+claude --plugin-dir /path/to/context_forge
 ```
 
 ### Uninstall
@@ -123,7 +123,8 @@ claude --plugin-dir ~/Desktop/context_forge
 bash scripts/uninstall.sh
 ```
 
-Removes the plugin symlink and the installed statusline script (only if unmodified).
+Uninstalls the plugin, removes the marketplace registration, and deletes the
+installed statusline script (only if unmodified).
 
 ---
 

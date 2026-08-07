@@ -15,7 +15,7 @@
         "name": "kyuna0312",
         "email": "khatanzorigb@gmail.com"
       },
-      "source": "https://github.com/kyuna0312/context_forge",
+      "source": "./",
       "category": "productivity",
       "tags": ["tokens", "context", "productivity", "hooks", "optimization", "claude-md", "settings", "scaffold", "template", "mcp", "postgres"]
     }

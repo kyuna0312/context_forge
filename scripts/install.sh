@@ -3,7 +3,6 @@ set -euo pipefail
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN_NAME="context_forge"
-CLAUDE_PLUGINS_DIR="${HOME}/.claude/plugins"
 
 echo "Installing $PLUGIN_NAME..."
 
@@ -17,23 +16,27 @@ if ! command -v python3 >/dev/null 2>&1; then
   echo "Warning: python3 not found — settings.json validation in the session-start hook will be skipped."
 fi
 
-# Option A: symlink into Claude plugins directory (preferred)
-mkdir -p "$CLAUDE_PLUGINS_DIR"
-
-if [ -L "${CLAUDE_PLUGINS_DIR}/${PLUGIN_NAME}" ]; then
-  echo "Removing existing symlink (-> $(readlink "${CLAUDE_PLUGINS_DIR}/${PLUGIN_NAME}"))..."
-  rm "${CLAUDE_PLUGINS_DIR}/${PLUGIN_NAME}"
-fi
-
-if [ -d "${CLAUDE_PLUGINS_DIR}/${PLUGIN_NAME}" ]; then
-  echo "Warning: ${CLAUDE_PLUGINS_DIR}/${PLUGIN_NAME} already exists as a directory."
-  echo "Remove it manually and re-run, or use --plugin-dir instead:"
-  echo "  claude --plugin-dir $PLUGIN_DIR"
+# Register + install through the plugin marketplace. A bare symlink under
+# ~/.claude/plugins is NOT discovered by current Claude Code.
+if ! command -v claude >/dev/null 2>&1; then
+  echo "Error: claude CLI not found. Install Claude Code first, then re-run," >&2
+  echo "or load the plugin in place: claude --plugin-dir $PLUGIN_DIR" >&2
   exit 1
 fi
 
-ln -s "$PLUGIN_DIR" "${CLAUDE_PLUGINS_DIR}/${PLUGIN_NAME}"
-echo "Linked: ${CLAUDE_PLUGINS_DIR}/${PLUGIN_NAME} -> $PLUGIN_DIR"
+# Each step falls back to its "already exists" counterpart, so re-running
+# this script after pulling updates refreshes the installed snapshot.
+claude plugin marketplace add "$PLUGIN_DIR" 2>/dev/null \
+  || claude plugin marketplace update "$PLUGIN_NAME"
+claude plugin install "$PLUGIN_NAME@$PLUGIN_NAME" 2>/dev/null \
+  || claude plugin update "$PLUGIN_NAME"
+
+# Clean up the legacy symlink older versions of this script created — it was
+# never discovered as a plugin.
+if [ -L "$HOME/.claude/plugins/$PLUGIN_NAME" ]; then
+  rm "$HOME/.claude/plugins/$PLUGIN_NAME"
+  echo "Removed legacy symlink: ~/.claude/plugins/$PLUGIN_NAME"
+fi
 
 # Install statusline script — never silently clobber a user-modified copy
 STATUSLINE_SRC="$PLUGIN_DIR/scripts/statusline-command.sh"
@@ -54,9 +57,8 @@ if [ -f "$STATUSLINE_SRC" ]; then
 fi
 
 echo ""
-echo "Done! Plugin '$PLUGIN_NAME' installed."
-echo "Start Claude Code with: claude"
-echo "Or use in place: claude --plugin-dir $PLUGIN_DIR"
+echo "Done! Plugin '$PLUGIN_NAME' installed (restart Claude Code to load it)."
+echo "The install is a snapshot — after pulling repo updates, re-run this script."
 echo ""
 echo "Optional — forge half (DB-backed scaffolding):"
 echo "  cd $PLUGIN_DIR/mcp && npm install"
