@@ -12,5 +12,6 @@ Argument `$0` = project name (optional; omit to show changes across all projects
 ## Steps
 
 1. Call `get_changelog` with `project_name=$0` (or no project to see everything).
-2. Present the entries grouped by day, newest first. For each entry show: time, change_type, and the file/package involved.
+2. Present the entries grouped by day, newest first. For each entry show: time, change_type, and the file/package involved (`HH:MM — <change_type> — <file or package>`).
 3. Only report what the tool returned. Do not summarise changes that aren't in the data.
+4. Zero rows → say so plainly ("no recorded changes"), don't guess what probably changed. Tool error (connection refused, relation does not exist) → report the missing forge setup piece and stop.

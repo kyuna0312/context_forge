@@ -75,7 +75,7 @@ Load this reference when:
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | integer | Suggestion id — pass to `apply_suggestion` |
-| `template_id` | integer | FK to `templates.id`; resolve via `get_template` if a name is needed |
+| `template_id` | integer | FK to `templates.id`; resolve id → name via `list_templates` (`get_template` only accepts a name) |
 | `kind` | text | Currently always `add_dep`; `add_file` and `change_stack` are reserved in the schema but unimplemented |
 | `payload` | JSONB | For `add_dep`: `{"package": "<name>"}` |
 | `occurrences` | integer | Number of distinct projects the package appeared in (from the latest `compute_suggestions` run) |
@@ -92,7 +92,7 @@ Load this reference when:
 
 ## `mcp__forge-db__get_template`
 
-**Purpose:** Resolve a template name to its full definition; in this skill, used to render `template_id` → name during drift reporting.
+**Purpose:** Resolve a template *name* to its full definition. It cannot look up by id — for `template_id` → name during drift reporting, use `list_templates` (returns `id, name, description, stack_json` without the heavy file/dep payloads).
 
 **Input:**
 
@@ -117,7 +117,7 @@ Load this reference when:
 
 **Usage note for this skill:**
 
-When rendering suggestions, only the `template.name` field is needed. The `files` and `deps` payloads can be large — fetching one template costs the full content payload. Cache the (id → name) mapping within a single response to avoid repeat calls.
+Don't use this tool just to get a name — one `list_templates` call yields the whole (id → name) map without the large `files`/`deps` payloads. Cache the map within a single response.
 
 If a name → id reverse lookup is needed (e.g. user says "for the nextjs-trpc-drizzle template, what's pending?"), call `get_template` with the name to get the id, then filter the suggestion list client-side.
 
@@ -154,6 +154,6 @@ If a name → id reverse lookup is needed (e.g. user says "for the nextjs-trpc-d
 
 **Read-then-drift:** "what packages do I keep adding?" → `get_changelog` (limit ~200) → filter to `change_type='dep_added'` → if user wants to act on the recurrence, call `compute_suggestions` and switch to the drift workflow.
 
-**Drift-then-apply:** `compute_suggestions` → per-template `get_template` for names → present numbered list → user picks → `apply_suggestion` per chosen id.
+**Drift-then-apply:** `compute_suggestions` → one `list_templates` call for the id → name map → present numbered list → user picks → `apply_suggestion` per chosen id.
 
 **Diagnosing zero results:** If `get_changelog` returns rows but `compute_suggestions` returns nothing, the cause is one of: (a) `project_id` is null on the dep_added rows (project not registered), (b) the package is already in `template_deps`, (c) `min_occurrences` is too high. Check (a) first by inspecting the `project_id` column in the changelog output.

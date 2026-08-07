@@ -1,7 +1,7 @@
 ---
 name: forge-changelog
 description: This skill should be used when the user asks to "show recent changes", "show forge changelog", "show changelog for <project>", "what did I add this week", "what files did I touch today", "what packages keep recurring", "what drifts from the template", "review template suggestions", "show pending forge suggestions", "sync forge templates", "apply template suggestion", or "compute back-mapping suggestions". Provides read, drift-discovery, and template back-mapping workflows that wrap the `forge-db` MCP tools (`get_changelog`, `compute_suggestions`, `apply_suggestion`).
-version: 0.1.0
+version: 0.2.0
 ---
 
 # forge-changelog
@@ -60,7 +60,7 @@ Use when the user wants to know what manual additions recur — the signal that 
 2. The tool returns pending suggestions, ordered by occurrence count descending. Each row carries `template_id`, `kind` (currently always `add_dep`), `payload` (JSON `{ "package": "..." }`), `occurrences`, and `status`.
 3. For each suggestion, render one plain-language line:
    `[<occurrences>×] Add <package> to template "<template name>" — currently added by hand in <occurrences> project(s).`
-   The template name is not in the suggestion row — look it up by calling `mcp__forge-db__get_template` once per distinct `template_id` (or note the IDs and ask the user if many templates are involved). Cache results within the response.
+   The template name is not in the suggestion row (only `template_id`) — call `mcp__forge-db__list_templates` once and map id → name from its result. (`get_template` looks up by *name*, so it cannot resolve an id.) Cache the map within the response.
 4. List suggestions sorted by occurrences desc. Stop after rendering; do not apply anything.
 5. Ask the user which suggestions to apply (by id or by package name). Wait for an explicit answer.
 
@@ -109,7 +109,8 @@ All forge-db MCP tools, called only via the registered `forge-db` server:
 
 - `mcp__forge-db__get_changelog` — read workflow
 - `mcp__forge-db__compute_suggestions` — drift workflow
-- `mcp__forge-db__get_template` — template name lookup during drift workflow
+- `mcp__forge-db__list_templates` — template_id → name mapping during drift workflow
+- `mcp__forge-db__get_template` — name → full definition (only when the user names a template)
 - `mcp__forge-db__apply_suggestion` — apply workflow
 
 Do **not** call `record_change` from this skill — it is reserved for the hook and the `/scaffold` command.
