@@ -1,6 +1,8 @@
 // forge-db MCP tools. Array order is the ListTools advertisement order —
 // keep it stable so clients that memoise the response don't churn.
+// inputSchema is a zod raw shape (what McpServer.registerTool expects).
 
+import { z } from "zod";
 import { q } from "./db.mjs";
 
 export const tools = [
@@ -8,7 +10,7 @@ export const tools = [
     name: "list_templates",
     description:
       "List all available project templates with their stack. Call this before scaffolding so you pick a real template name — never invent one.",
-    inputSchema: { type: "object", properties: {} },
+    inputSchema: {},
     handler: async () =>
       q("SELECT id, name, description, stack_json FROM templates ORDER BY name"),
   },
@@ -17,11 +19,7 @@ export const tools = [
     name: "get_template",
     description:
       "Get the full definition of one template: its files (verbatim content) and dependencies (exact pinned versions). Use this content literally; do not rewrite or guess package versions.",
-    inputSchema: {
-      type: "object",
-      properties: { name: { type: "string" } },
-      required: ["name"],
-    },
+    inputSchema: { name: z.string() },
     handler: async ({ name }) => {
       const [tpl] = await q("SELECT * FROM templates WHERE name = $1", [name]);
       if (!tpl) throw new Error(`No template named "${name}". Call list_templates first.`);
@@ -42,13 +40,9 @@ export const tools = [
     description:
       "Record a newly scaffolded project so future changes can be tracked against its template.",
     inputSchema: {
-      type: "object",
-      properties: {
-        name: { type: "string" },
-        template_name: { type: "string" },
-        root_path: { type: "string" },
-      },
-      required: ["name", "root_path"],
+      name: z.string(),
+      template_name: z.string().optional(),
+      root_path: z.string(),
     },
     handler: async ({ name, template_name, root_path }) => {
       let template_id = null;
@@ -69,19 +63,12 @@ export const tools = [
     description:
       "Append a changelog entry. Normally called automatically by the hook, but can be called manually for stack changes.",
     inputSchema: {
-      type: "object",
-      properties: {
-        project_name: { type: "string" },
-        change_type: {
-          type: "string",
-          enum: ["file_created", "file_edited", "dep_added", "stack_changed"],
-        },
-        file_path: { type: "string" },
-        package: { type: "string" },
-        version: { type: "string" },
-        summary: { type: "string" },
-      },
-      required: ["change_type"],
+      project_name: z.string().optional(),
+      change_type: z.enum(["file_created", "file_edited", "dep_added", "stack_changed"]),
+      file_path: z.string().optional(),
+      package: z.string().optional(),
+      version: z.string().optional(),
+      summary: z.string().optional(),
     },
     handler: async (a) => {
       const [proj] = a.project_name
@@ -102,11 +89,8 @@ export const tools = [
     name: "get_changelog",
     description: "Read recent changelog entries for a project (or all projects).",
     inputSchema: {
-      type: "object",
-      properties: {
-        project_name: { type: "string" },
-        limit: { type: "number", default: 50 },
-      },
+      project_name: z.string().optional(),
+      limit: z.number().default(50),
     },
     handler: async ({ project_name, limit = 50 }) =>
       project_name
@@ -118,10 +102,7 @@ export const tools = [
     name: "compute_suggestions",
     description:
       "Analyse changelogs and produce/update template-improvement suggestions (the back-mapping feedback loop). E.g. if a dependency was manually added across many projects of the same template, suggest adding it to the template. Returns pending suggestions.",
-    inputSchema: {
-      type: "object",
-      properties: { min_occurrences: { type: "number", default: 2 } },
-    },
+    inputSchema: { min_occurrences: z.number().default(2) },
     handler: async ({ min_occurrences = 2 }) => {
       const rows = await q(
         `SELECT p.template_id, c.package, COUNT(DISTINCT c.project_id) AS seen
@@ -156,9 +137,8 @@ export const tools = [
     description:
       "Apply a pending suggestion to its template (e.g. add the dependency) and mark it applied. Ask the user before calling this.",
     inputSchema: {
-      type: "object",
-      properties: { suggestion_id: { type: "number" }, version: { type: "string", default: "latest" } },
-      required: ["suggestion_id"],
+      suggestion_id: z.number(),
+      version: z.string().default("latest"),
     },
     handler: async ({ suggestion_id, version = "latest" }) => {
       const [s] = await q("SELECT * FROM template_suggestions WHERE id=$1", [suggestion_id]);

@@ -259,10 +259,10 @@ context_forge/
 │   └── scripts/
 │       └── session-start.sh     # CLAUDE.md size warning on startup
 ├── mcp/
-│   ├── server.mjs               # forge-db MCP server — SDK wiring (38 lines)
+│   ├── server.mjs               # forge-db MCP server — McpServer wiring
 │   ├── db.mjs                   # dbUrl() + lazy pg.Pool + q() helper
 │   ├── record-change.mjs        # PostToolUse hook: Write/Edit → changelogs
-│   ├── package.json             # @modelcontextprotocol/sdk + pg
+│   ├── package.json             # @modelcontextprotocol/sdk + pg + zod
 │   ├── tools.mjs                # All 7 forge-db tools (ordered registry)
 │   └── db/
 │       ├── schema.sql           # Postgres tables for templates + changelogs

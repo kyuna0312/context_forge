@@ -68,7 +68,7 @@ Hook and skill scripts must use `$CLAUDE_PLUGIN_ROOT` (not hardcoded paths) when
 
 ### Forge MCP server (`mcp/server.mjs`)
 
-Stdio MCP server using `@modelcontextprotocol/sdk` + `pg`. Exposes 7 tools:
+Stdio MCP server (`McpServer` + zod input schemas) using `@modelcontextprotocol/sdk` + `pg`. Exposes 7 tools:
 
 | Tool | Purpose |
 |------|---------|
@@ -160,7 +160,7 @@ Adapted from the Anthropic internal coding standards template. The generic templ
 
 - **Languages present:** Bash (hooks, scripts), Node.js ESM `.mjs` (MCP server + record-change hook), Markdown (skills, commands, docs), SQL (Postgres schema).
 - **Not present:** TypeScript, Bun, Python source (only `python3 -m json.tool` for debug), Rust, any third-party test framework (tests use built-in `node:test`), any linter, any bundler.
-- **Single Node package:** `mcp/package.json` (deps: `@modelcontextprotocol/sdk`, `pg`). Nothing else has a `package.json`.
+- **Single Node package:** `mcp/package.json` (deps: `@modelcontextprotocol/sdk`, `pg`, `zod`). Nothing else has a `package.json`.
 
 ### Build, install, and verify commands
 
