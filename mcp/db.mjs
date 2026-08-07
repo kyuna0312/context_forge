@@ -11,7 +11,20 @@ export function dbUrl() {
 
 let _pool;
 function pool() {
-  if (!_pool) _pool = new pg.Pool({ connectionString: dbUrl() });
+  if (!_pool) {
+    const url = dbUrl();
+    if (!url) {
+      throw new Error(
+        "FORGE_DATABASE_URL is not set — export it in the shell that launches Claude Code, then restart."
+      );
+    }
+    // pg has no default connect timeout; without one an unreachable host
+    // hangs the tool call instead of erroring.
+    _pool = new pg.Pool({ connectionString: url, connectionTimeoutMillis: 5000 });
+    // An idle client error (dropped connection) is an 'error' event on the
+    // pool; unhandled it would crash the whole MCP server.
+    _pool.on("error", (err) => console.error(`forge-db pool error: ${err.message}`));
+  }
   return _pool;
 }
 

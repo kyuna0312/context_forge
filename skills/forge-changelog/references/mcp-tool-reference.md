@@ -136,17 +136,16 @@ If a name → id reverse lookup is needed (e.g. user says "for the nextjs-trpc-d
 **Behaviour:**
 
 1. Loads the suggestion by id; errors with `No such suggestion` if not found.
-2. If `kind = 'add_dep'`:
-   - `INSERT INTO template_deps (template_id, package, version) VALUES (...) ON CONFLICT (template_id, package) DO NOTHING`.
-   - Effect: if the dep is already present at a different version, the existing row wins. To overwrite, the user must delete the existing row first.
-3. Updates the suggestion to `status='applied'` regardless of the conflict outcome.
-4. Returns `{ "applied": <suggestion_id> }`.
+2. Errors on any `kind` other than `add_dep` (`add_file` / `change_stack` are reserved but unimplemented) — the status is *not* flipped for them.
+3. `INSERT INTO template_deps (...) ON CONFLICT (template_id, package) DO NOTHING RETURNING id`.
+   - If the dep is already present at a different version, the existing row wins. To overwrite, the user must delete the existing row first.
+4. Updates the suggestion to `status='applied'`.
+5. Returns `{ "applied": <suggestion_id>, "package": "<pkg>", "dep_inserted": <bool> }`.
 
 **Edge cases:**
 
-- `kind` other than `add_dep` is silently no-op'd at step 2 (the `if` falls through), but the status flips to `applied`. Currently the schema only allows the unimplemented kinds `add_file` and `change_stack` to land here via direct SQL — there is no tool path that creates them.
+- `dep_inserted: false` means the package was already in `template_deps` — the existing pinned version was kept and no row changed, even though the suggestion is now `applied`. Tell the user this instead of reporting a successful add.
 - `version='latest'` is stored literally as the string `"latest"`. The scaffolder then uses it verbatim in `package.json`, which most package managers accept but it is not a pinned version. Tell the user to re-apply with an explicit version when they decide.
-- Conflict on `(template_id, package)` is silent. If the user expected to overwrite an existing pinned version, surface this — the suggestion will still be marked applied even though no row changed.
 
 ---
 

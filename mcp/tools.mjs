@@ -48,7 +48,8 @@ export const tools = [
       let template_id = null;
       if (template_name) {
         const [t] = await q("SELECT id FROM templates WHERE name=$1", [template_name]);
-        template_id = t?.id ?? null;
+        if (!t) throw new Error(`No template named "${template_name}". Call list_templates first.`);
+        template_id = t.id;
       }
       const [row] = await q(
         "INSERT INTO projects (name, template_id, root_path) VALUES ($1,$2,$3) RETURNING *",
@@ -71,6 +72,8 @@ export const tools = [
       summary: z.string().optional(),
     },
     handler: async (a) => {
+      if (a.change_type === "dep_added" && !a.package)
+        throw new Error("dep_added requires `package` — the row is useless to compute_suggestions without it.");
       const [proj] = a.project_name
         ? await q("SELECT id FROM projects WHERE name=$1 ORDER BY id DESC LIMIT 1", [a.project_name])
         : [];
@@ -90,7 +93,7 @@ export const tools = [
     description: "Read recent changelog entries for a project (or all projects).",
     inputSchema: {
       project_name: z.string().optional(),
-      limit: z.number().default(50),
+      limit: z.number().int().min(1).max(500).default(50),
     },
     handler: async ({ project_name, limit = 50 }) =>
       project_name
@@ -102,7 +105,7 @@ export const tools = [
     name: "compute_suggestions",
     description:
       "Analyse changelogs and produce/update template-improvement suggestions (the back-mapping feedback loop). E.g. if a dependency was manually added across many projects of the same template, suggest adding it to the template. Returns pending suggestions.",
-    inputSchema: { min_occurrences: z.number().default(2) },
+    inputSchema: { min_occurrences: z.number().int().min(1).default(2) },
     handler: async ({ min_occurrences = 2 }) => {
       const rows = await q(
         `SELECT p.template_id, c.package, COUNT(DISTINCT c.project_id) AS seen
@@ -143,16 +146,17 @@ export const tools = [
     handler: async ({ suggestion_id, version = "latest" }) => {
       const [s] = await q("SELECT * FROM template_suggestions WHERE id=$1", [suggestion_id]);
       if (!s) throw new Error("No such suggestion");
-      if (s.kind === "add_dep") {
-        const pkg = s.payload.package;
-        await q(
-          `INSERT INTO template_deps (template_id, package, version)
-           VALUES ($1,$2,$3) ON CONFLICT (template_id, package) DO NOTHING`,
-          [s.template_id, pkg, version]
-        );
-      }
+      if (s.kind !== "add_dep")
+        throw new Error(`Suggestion kind "${s.kind}" is not implemented — only add_dep can be applied.`);
+      const inserted = await q(
+        `INSERT INTO template_deps (template_id, package, version)
+         VALUES ($1,$2,$3) ON CONFLICT (template_id, package) DO NOTHING RETURNING id`,
+        [s.template_id, s.payload.package, version]
+      );
       await q("UPDATE template_suggestions SET status='applied' WHERE id=$1", [suggestion_id]);
-      return { applied: suggestion_id };
+      // dep_inserted: false = package already in template_deps; the existing
+      // pinned version was kept (delete that row first to overwrite).
+      return { applied: suggestion_id, package: s.payload.package, dep_inserted: inserted.length > 0 };
     },
   },
 ];
