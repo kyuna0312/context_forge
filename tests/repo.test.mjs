@@ -162,17 +162,18 @@ test("record-change hook is a no-op (exit 0) without a database", () => {
   }
 });
 
-test("statusline renders sample input", () => {
+test("statusline renders sample input (multi-word model name)", () => {
   const input = JSON.stringify({
     context_window: { used_percentage: 72 },
     workspace: { current_dir: root },
-    model: { display_name: "Sonnet" },
+    model: { display_name: "Fable 5" },
   });
   const r = spawnSync("bash", [path.join(root, "scripts/statusline-command.sh")], {
     input,
     encoding: "utf8",
   });
   assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /Fable 5/, `space in model name must not shift fields: ${r.stdout}`);
   assert.match(r.stdout, /72%/, `expected context percentage in: ${r.stdout}`);
 });
 

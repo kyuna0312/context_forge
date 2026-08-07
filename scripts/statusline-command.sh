@@ -17,19 +17,21 @@ ctx_orange="\033[38;2;255;179;100m"
 ctx_red="\033[38;2;255;120;120m"
 
 # ── Extract fields ─────────────────────────────────────────────────────────────
-read -r cwd model used_pct rl_pct <<< "$(echo "$input" | python3 -c "
+# \x1f-separated, not space-separated: model names ("Fable 5") and paths
+# contain spaces, which would shift every field under default IFS.
+IFS=$'\x1f' read -r cwd model used_pct rl_pct <<< "$(echo "$input" | python3 -c "
 import json, sys
 d = json.load(sys.stdin)
 w = d.get('workspace', {})
 cw = d.get('context_window', {})
 rl = d.get('rate_limits', {}).get('5h', {})
-print(
+print('\x1f'.join(str(x) for x in (
     w.get('current_dir', d.get('cwd', '')),
     d.get('model', {}).get('display_name', ''),
     cw.get('used_percentage', ''),
-    rl.get('used_percentage', '')
-)
-" 2>/dev/null || echo "   ")"
+    rl.get('used_percentage', ''),
+)))
+" 2>/dev/null || printf '\x1f\x1f\x1f')"
 
 # ── Directory: collapse $HOME to ~ and trim to last 3 components ───────────────
 home_dir="${HOME:-/root}"
@@ -54,12 +56,13 @@ fi
 # ── Context usage bar ─────────────────────────────────────────────────────────
 ctx_part=""
 if [ -n "$used_pct" ]; then
-  used_int=$(printf "%.0f" "$used_pct")
+  used_int=$(printf "%.0f" "$used_pct" 2>/dev/null || echo 0)
   ctx_color="$ctx_green"
   [ "$used_int" -ge 50 ] && ctx_color="$ctx_yellow"
   [ "$used_int" -ge 75 ] && ctx_color="$ctx_orange"
   [ "$used_int" -ge 90 ] && ctx_color="$ctx_red"
   filled=$(( used_int / 10 ))
+  [ "$filled" -gt 10 ] && filled=10   # >100% input would make the substring math negative
   full="██████████"; hollow="░░░░░░░░░░"
   bar="${full:0:filled}${hollow:0:10-filled}"
   ctx_part="${ctx_color}ctx [${bar}] ${used_int}%${reset}"
@@ -68,7 +71,14 @@ fi
 # ── CLAUDE.md token estimate ──────────────────────────────────────────────────
 md_part=""
 count_tokens() { local f="$1"; [ -f "$f" ] && echo "$(( $(wc -w < "$f") * 13 / 10 ))" || echo 0; }
-total_md=$(( $(count_tokens "$HOME/.claude/CLAUDE.md") + $(count_tokens "$cwd/CLAUDE.md") ))
+# First existing case variant wins — counting both would double on
+# case-insensitive filesystems (macOS default).
+md_for_dir() {
+  [ -n "$1" ] || { echo 0; return; }
+  if [ -f "$1/CLAUDE.md" ]; then count_tokens "$1/CLAUDE.md"
+  else count_tokens "$1/claude.md"; fi
+}
+total_md=$(( $(md_for_dir "$HOME/.claude") + $(md_for_dir "$cwd") ))
 if [ "$total_md" -gt 0 ]; then
   md_color="$ctx_green"
   [ "$total_md" -ge 390  ] && md_color="$ctx_yellow"
@@ -79,7 +89,7 @@ fi
 
 # ── Rate limit (if available) ─────────────────────────────────────────────────
 rl_part=""
-if [ -n "$rl_pct" ] && [ "$rl_pct" != "" ]; then
+if [ -n "$rl_pct" ]; then
   rl_int=$(printf "%.0f" "$rl_pct" 2>/dev/null || echo 0)
   if [ "$rl_int" -ge 70 ]; then
     rl_color="$ctx_yellow"
