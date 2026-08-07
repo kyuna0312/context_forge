@@ -1,7 +1,7 @@
 // Shared Postgres connection-string resolution and lazy pool/query helper
-// for the forge-db MCP server. The record-change PostToolUse hook also
-// imports dbUrl() from here but uses its own one-shot pg.Client, so the
-// pool below is lazy — it is only instantiated on the first call to q().
+// for the forge-db MCP server. The pool below is lazy — it is only
+// instantiated on the first call to q(). The record-change hook reads the
+// same env vars but stays import-free so it works without node_modules.
 
 import pg from "pg";
 

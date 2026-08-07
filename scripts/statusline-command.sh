@@ -60,10 +60,8 @@ if [ -n "$used_pct" ]; then
   [ "$used_int" -ge 75 ] && ctx_color="$ctx_orange"
   [ "$used_int" -ge 90 ] && ctx_color="$ctx_red"
   filled=$(( used_int / 10 ))
-  empty=$(( 10 - filled ))
-  bar=""
-  for i in $(seq 1 $filled); do bar="${bar}█"; done
-  for i in $(seq 1 $empty);  do bar="${bar}░"; done
+  full="██████████"; hollow="░░░░░░░░░░"
+  bar="${full:0:filled}${hollow:0:10-filled}"
   ctx_part="${ctx_color}ctx [${bar}] ${used_int}%${reset}"
 fi
 

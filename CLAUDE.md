@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 context_forge is a Claude Code plugin that combines two things in one package:
 
-1. **Token-waste reduction** — 14 skills, one diagnostic agent, a session-start hook, and a status line script.
+1. **Token-waste reduction** — 15 skills, one diagnostic agent, a session-start hook, and a status line script.
 2. **DB-backed project scaffolding** — three slash commands (`/scaffold`, `/changelog`, `/sync-template`), a `PostToolUse` hook, and an MCP server (`forge-db`) that exposes Postgres-stored templates so the model never invents template content or guesses dependency versions.
 
 Bash scripts + markdown for the token-saver half. Node + Postgres (via `pg`) for the forge half. No tests, no build system. The MCP server has its own `package.json` under `mcp/`.
@@ -47,7 +47,7 @@ All token-saver hooks and skills emit structured data in **LTX (Low Token eXchan
 value|value|value             ← data rows (pipe-delimited)
 ```
 
-Human-readable warnings go to **stderr**; machine-readable LTX rows go to **stdout**. The shared encoding library is `scripts/ltx.sh` — source it to get `ltx_header`, `ltx_row`, and `ltx_human`.
+Human-readable warnings go to **stderr**; machine-readable LTX rows go to **stdout**. The emitters (`ltx_header`, `ltx_row`, `ltx_human`) are three one-line functions defined inline in `hooks/scripts/session-start.sh` — copy them into any new script that emits LTX.
 
 Hook and skill scripts must use `$CLAUDE_PLUGIN_ROOT` (not hardcoded paths) when referencing plugin files.
 
@@ -60,7 +60,7 @@ Hook and skill scripts must use `$CLAUDE_PLUGIN_ROOT` (not hardcoded paths) when
 
 ### Record-change hook (forge)
 
-`hooks/scripts/record-change.mjs` runs after every `Write` or `Edit`. It reads the tool event JSON on stdin, looks up the most recent project whose `root_path` is a prefix of the touched file, and inserts a `changelogs` row (`file_created` or `file_edited`). It never blocks the tool — any error exits 0. Requires `FORGE_DATABASE_URL` exported; without it, the hook is a no-op.
+`mcp/record-change.mjs` runs after every `Write` or `Edit`. It reads the tool event JSON on stdin, looks up the most recent project whose `root_path` is a prefix of the touched file, and inserts a `changelogs` row (`file_created` or `file_edited`). It never blocks the tool — any error exits 0. Requires `FORGE_DATABASE_URL` exported; without it (or without `mcp/node_modules` — `pg` is imported lazily), the hook is a no-op.
 
 ### Status line script
 
@@ -85,11 +85,8 @@ Stdio MCP server using `@modelcontextprotocol/sdk` + `pg`. Exposes 7 tools:
 ## Adding a New Skill
 
 1. Create `skills/<skill-name>/SKILL.md` with YAML frontmatter (`name`, `description`, `version`) followed by skill instructions
-2. If the skill emits structured data, add a `## LTX Schema` section and use `scripts/ltx.sh` functions
+2. If the skill emits structured data, add a `## LTX Schema` section and copy the three LTX emitter functions from `hooks/scripts/session-start.sh`
 3. Add optional `references/` docs and `scripts/` as needed — no registration required; Claude Code auto-discovers `SKILL.md` files
-
-Several skills currently have only a `references/` doc and no `SKILL.md` yet (e.g., `auto-compact`, `check-claudemd-size`, `debug-hooks`, `estimate-tokens`, `manage-skills`, `project-isolation`, `settings-diff`, `tune-settings`). These are stubs awaiting full skill content.
-
 ## Adding a New Agent
 
 Create `agents/<name>.md` with YAML frontmatter:
@@ -128,7 +125,7 @@ CLAUDE_PLUGIN_ROOT=$(pwd) bash hooks/scripts/session-start.sh
 
 # Run record-change hook with a fake tool event
 echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/x"}}' \
-  | FORGE_DATABASE_URL="$FORGE_DATABASE_URL" node hooks/scripts/record-change.mjs
+  | FORGE_DATABASE_URL="$FORGE_DATABASE_URL" node mcp/record-change.mjs
 
 # Smoke-test the MCP server (will hang waiting for MCP stdio — Ctrl+C to exit)
 DATABASE_URL="$FORGE_DATABASE_URL" node mcp/server.mjs
@@ -162,13 +159,14 @@ Adapted from the Anthropic internal coding standards template. The generic templ
 ### Stack (factual, not aspirational)
 
 - **Languages present:** Bash (hooks, scripts), Node.js ESM `.mjs` (MCP server + record-change hook), Markdown (skills, commands, docs), SQL (Postgres schema).
-- **Not present:** TypeScript, Bun, Python source (only `python3 -m json.tool` for debug), Rust, any test framework, any linter, any bundler.
+- **Not present:** TypeScript, Bun, Python source (only `python3 -m json.tool` for debug), Rust, any third-party test framework (tests use built-in `node:test`), any linter, any bundler.
 - **Single Node package:** `mcp/package.json` (deps: `@modelcontextprotocol/sdk`, `pg`). Nothing else has a `package.json`.
 
 ### Build, install, and verify commands
 
 | Purpose | Command |
 |---------|---------|
+| Run the test suite | `node --test` (from repo root; discovers `tests/`) |
 | Symlink plugin into `~/.claude/plugins/` | `bash scripts/install.sh` |
 | Install MCP server deps | `cd mcp && npm install` |
 | Apply forge schema | `psql "$FORGE_DATABASE_URL" -f mcp/db/schema.sql` |
@@ -176,10 +174,10 @@ Adapted from the Anthropic internal coding standards template. The generic templ
 | Syntax-check `.mjs` | `node --check <file>` |
 | Syntax-check `.sh` | `bash -n <file>` |
 | Smoke-test MCP server | `DATABASE_URL=$FORGE_DATABASE_URL node mcp/server.mjs` (Ctrl+C to exit) |
-| Run record-change hook | `echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/x"}}' \| FORGE_DATABASE_URL=$FORGE_DATABASE_URL node hooks/scripts/record-change.mjs` |
+| Run record-change hook | `echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/x"}}' \| FORGE_DATABASE_URL=$FORGE_DATABASE_URL node mcp/record-change.mjs` |
 | Run session-start hook | `CLAUDE_PLUGIN_ROOT=$(pwd) bash hooks/scripts/session-start.sh` |
 
-There is **no `npm test`, no `pytest`, no `npm run lint`, no `black`** in this repo. Do not invent them. If a test framework is added later, document it here at the same time.
+The only test entry point is `node --test` (built-in runner over `tests/`). There is **no `npm test`, no `pytest`, no `npm run lint`, no `black`** in this repo. Do not invent them.
 
 ### Steering rules
 
@@ -187,5 +185,5 @@ There is **no `npm test`, no `pytest`, no `npm run lint`, no `black`** in this r
 2. **No new languages without explicit ask.** Current stack is Bash + Node `.mjs` + Markdown + SQL. Do not introduce TypeScript, Python source files, or Rust unless the user requests it.
 3. **Strict value safety.** For any value that originates in `forge-db` (template content, dependency versions, file paths from changelogs), use the exact returned value. No reformatting, no upgrades, no normalisation.
 4. **No new feature without verifiable success.** Before declaring a change done, run the relevant verify command from the table above (JSON parse, `node --check`, `bash -n`). For skill changes, run the broken-ref + second-person audit shown in this file's history.
-5. **Tests, when introduced, live in `tests/` and must pass before commit.** The directory does not exist yet; do not block work on a gate that has no implementation. When the first test framework lands, this rule activates fully.
+5. **Tests live in `tests/` and must pass before commit.** Run `node --test` from the repo root; the suite validates JSON, hook config, skill/command/agent frontmatter, script syntax, and hook runtime behavior.
 6. **Keep this file under 12,000 characters.** `wc -c CLAUDE.md` is the budget. Move detail to skill `references/` or feature-specific docs when the cap is approached. Do not pad with framing prose.

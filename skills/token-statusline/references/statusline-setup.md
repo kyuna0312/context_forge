@@ -53,8 +53,8 @@ Add to `~/.claude/settings.json`:
 Copy script first (plugin path may change on reinstall):
 
 ```bash
-cp "${CLAUDE_PLUGIN_ROOT}/skills/token-statusline/scripts/token-status.sh" ~/.claude/token-status.sh
-chmod +x ~/.claude/token-status.sh
+cp "${CLAUDE_PLUGIN_ROOT}/scripts/statusline-command.sh" ~/.claude/statusline-command.sh
+chmod +x ~/.claude/statusline-command.sh
 ```
 
 Then wire up:
@@ -63,7 +63,7 @@ Then wire up:
 {
   "statusLine": {
     "type": "command",
-    "command": "bash ~/.claude/token-status.sh",
+    "command": "bash ~/.claude/statusline-command.sh",
     "refreshInterval": 30
   }
 }
@@ -119,7 +119,7 @@ ctx_part=" ${ctx_color}ctx [${bar}] ${used_int}%${reset}"
 
 ---
 
-## Thresholds Used in token-status.sh
+## Thresholds Used in statusline-command.sh
 
 | Context % | Color  | Meaning         |
 |-----------|--------|-----------------|

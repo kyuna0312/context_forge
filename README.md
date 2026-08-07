@@ -1,5 +1,7 @@
 # context_forge
 
+[![test](https://github.com/kyuna0312/context_forge/actions/workflows/test.yml/badge.svg)](https://github.com/kyuna0312/context_forge/actions/workflows/test.yml)
+
 A Claude Code plugin that combines two things:
 
 1. **Token-waste reduction** — 15 skills, a diagnostic agent, a session-start hook, and a live status line showing context usage.
@@ -113,6 +115,26 @@ The install script symlinks the plugin into `~/.claude/plugins/context_forge`.
 claude --plugin-dir ~/Desktop/context_forge
 ```
 
+### Uninstall
+
+```bash
+bash scripts/uninstall.sh
+```
+
+Removes the plugin symlink and the installed statusline script (only if unmodified).
+
+---
+
+## Tests
+
+Zero-dependency validation suite using Node's built-in test runner:
+
+```bash
+node --test
+```
+
+Validates every JSON file, hook config and event names, skill/command/agent frontmatter, shell and `.mjs` syntax, and runs the hooks + statusline against sample input. Runs in CI on every push (`.github/workflows/test.yml`).
+
 ---
 
 ## Token Status Line Setup
@@ -122,8 +144,8 @@ The status line shows live context window usage at the bottom of the terminal.
 **Step 1 — Copy script to permanent location:**
 
 ```bash
-cp ~/.claude/plugins/context_forge/skills/token-statusline/scripts/token-status.sh ~/.claude/token-status.sh
-chmod +x ~/.claude/token-status.sh
+cp ~/.claude/plugins/context_forge/scripts/statusline-command.sh ~/.claude/statusline-command.sh
+chmod +x ~/.claude/statusline-command.sh
 ```
 
 **Step 2 — Add to `~/.claude/settings.json`:**
@@ -132,7 +154,7 @@ chmod +x ~/.claude/token-status.sh
 {
   "statusLine": {
     "type": "command",
-    "command": "bash ~/.claude/token-status.sh",
+    "command": "bash ~/.claude/statusline-command.sh",
     "refreshInterval": 30
   }
 }
@@ -144,7 +166,7 @@ chmod +x ~/.claude/token-status.sh
 
 ```bash
 echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PWD"'"}}' \
-  | bash ~/.claude/token-status.sh
+  | bash ~/.claude/statusline-command.sh
 ```
 
 Expected output: `ctx [███████░░░] 72%`
@@ -224,6 +246,7 @@ context_forge/
 ├── .claude-plugin/
 │   ├── plugin.json              # Plugin manifest
 │   └── marketplace.json         # Marketplace metadata
+├── .github/workflows/test.yml   # CI: node --test on every push/PR
 ├── .mcp.json                    # Registers the forge-db MCP server
 ├── agents/
 │   └── hook-error-fixer.md      # Auto-diagnoses broken hooks
@@ -240,22 +263,16 @@ context_forge/
 │   ├── db.mjs                   # dbUrl() + lazy pg.Pool + q() helper
 │   ├── record-change.mjs        # PostToolUse hook: Write/Edit → changelogs
 │   ├── package.json             # @modelcontextprotocol/sdk + pg
-│   ├── tools/
-│   │   ├── index.mjs            # Ordered tool registry
-│   │   ├── list_templates.mjs
-│   │   ├── get_template.mjs
-│   │   ├── register_project.mjs
-│   │   ├── record_change.mjs
-│   │   ├── get_changelog.mjs
-│   │   ├── compute_suggestions.mjs
-│   │   └── apply_suggestion.mjs
+│   ├── tools.mjs                # All 7 forge-db tools (ordered registry)
 │   └── db/
 │       ├── schema.sql           # Postgres tables for templates + changelogs
 │       └── seed-example.sql     # One example template (node-ts-basic)
 ├── scripts/
 │   ├── install.sh               # Installation helper (symlinks plugin)
-│   ├── ltx.sh                   # Shared LTX encoding library
-│   └── statusline-command.sh    # Status line renderer
+│   ├── uninstall.sh             # Removes symlink + statusline copy
+│   └── statusline-command.sh    # Status line renderer (copy to ~/.claude/)
+├── tests/
+│   └── repo.test.mjs            # Zero-dep validation suite (node --test)
 └── skills/
     ├── auto-compact/
     ├── check-claudemd-size/
@@ -277,8 +294,6 @@ context_forge/
     ├── settings-diff/
     ├── task-brain-lite/
     ├── token-statusline/
-    │   └── scripts/
-    │       └── token-status.sh  # Status line script (copy to ~/.claude/)
     └── tune-settings/
 ```
 

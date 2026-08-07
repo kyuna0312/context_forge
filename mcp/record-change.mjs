@@ -4,10 +4,9 @@
 // We stay deliberately small and never block the tool — on any error we exit 0.
 //
 // Env: FORGE_DATABASE_URL (canonical) or DATABASE_URL (fallback) —
-// same DB the MCP server uses; resolution lives in ./db.mjs.
-
-import pg from "pg";
-import { dbUrl } from "./db.mjs";
+// same DB the MCP server uses. pg is imported lazily so the hook stays a
+// no-op (exit 0) even when mcp/node_modules is missing — a static import
+// would crash every Write/Edit for users who never set up the forge half.
 
 async function main() {
   const raw = await read(process.stdin);
@@ -23,8 +22,11 @@ async function main() {
     tool === "Write" ? "file_created" :
     tool === "Edit"  ? "file_edited"  : "file_edited";
 
-  const url = dbUrl();
+  const url = process.env.FORGE_DATABASE_URL || process.env.DATABASE_URL;
   if (!url) return;
+
+  let pg;
+  try { pg = (await import("pg")).default; } catch { return; }
 
   const client = new pg.Client({ connectionString: url });
   await client.connect();

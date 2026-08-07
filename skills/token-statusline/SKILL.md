@@ -25,8 +25,8 @@ Rate limit usage appears only when near limits (≥70%) and on Claude.ai account
 
 ```bash
 # Copy to permanent location
-cp "${CLAUDE_PLUGIN_ROOT}/skills/token-statusline/scripts/token-status.sh" ~/.claude/token-status.sh
-chmod +x ~/.claude/token-status.sh
+cp "${CLAUDE_PLUGIN_ROOT}/scripts/statusline-command.sh" ~/.claude/statusline-command.sh
+chmod +x ~/.claude/statusline-command.sh
 ```
 
 **Step 2**: Add to `~/.claude/settings.json`:
@@ -35,7 +35,7 @@ chmod +x ~/.claude/token-status.sh
 {
   "statusLine": {
     "type": "command",
-    "command": "bash ~/.claude/token-status.sh",
+    "command": "bash ~/.claude/statusline-command.sh",
     "refreshInterval": 30
   }
 }
@@ -47,7 +47,7 @@ chmod +x ~/.claude/token-status.sh
 
 If `settings.json` already has a `statusLine.command`, choose:
 
-- **Replace**: Swap the `command` path to `token-status.sh`
+- **Replace**: Swap the `command` path to `statusline-command.sh`
 - **Extend**: Add the bar rendering block to the existing script (see `references/statusline-setup.md` Option B/C)
 
 ## Color Thresholds
@@ -80,7 +80,7 @@ Test script output before wiring it up:
 
 ```bash
 echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PWD"'"}}' \
-  | bash ~/.claude/token-status.sh
+  | bash ~/.claude/statusline-command.sh
 ```
 
 Should print a colored bar with `ctx [███████░░░] 72%` and CLAUDE.md token count.
@@ -109,4 +109,4 @@ Example:
 ## Additional Resources
 
 - **`references/statusline-setup.md`** — Full JSON input schema, all setup options, troubleshooting
-- **`scripts/token-status.sh`** — Standalone status line script (copy to `~/.claude/` for permanent use)
+- **`scripts/statusline-command.sh`** (plugin root) — the status line script itself (copy to `~/.claude/` for permanent use)

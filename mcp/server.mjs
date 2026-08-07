@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // forge-db MCP server — exposes Postgres-backed tools so the model never
-// guesses template facts. Tool implementations live in mcp/tools/<name>.mjs;
+// guesses template facts. Tool implementations live in mcp/tools.mjs;
 // this file is just SDK wiring (transport, request handlers, dispatch).
 //
 // Requires:  npm i @modelcontextprotocol/sdk pg
@@ -12,7 +12,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { tools } from "./tools/index.mjs";
+import { tools } from "./tools.mjs";
 
 const server = new Server(
   { name: "forge-db", version: "0.1.0" },

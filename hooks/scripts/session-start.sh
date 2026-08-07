@@ -3,9 +3,10 @@
 # Runs on SessionStart. Emits LTX rows to stdout, human warnings to stderr.
 set -euo pipefail
 
-# Source shared LTX library
-# shellcheck source=../../scripts/ltx.sh
-source "${CLAUDE_PLUGIN_ROOT}/scripts/ltx.sh"
+# LTX emitters: schema header + pipe-delimited rows to stdout, human notes to stderr
+ltx_header() { echo "@v1:${1}"; }
+ltx_row()    { local IFS='|'; echo "$*"; }
+ltx_human()  { echo "$1" >&2; }
 
 readonly WARN_WORDS=600
 readonly CRIT_WORDS=1000
