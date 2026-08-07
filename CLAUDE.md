@@ -1,164 +1,147 @@
-# CLAUDE.md
+# CLAUDE.md — context_forge Rules
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code working in this repository. Rules are grouped into four sections: **A. Architecture · B. Anti-Hallucination & Value Safety · C. Extending the Plugin · D. Agent Operating Mode**. A compressed **DO NOT** checklist closes the file.
 
 ## Project
 
-context_forge is a Claude Code plugin that combines two things in one package:
+context_forge is a Claude Code plugin combining two halves:
 
 1. **Token-waste reduction** — 15 skills, one diagnostic agent, a session-start hook, and a status line script.
-2. **DB-backed project scaffolding** — three slash commands (`/scaffold`, `/changelog`, `/sync-template`), a `PostToolUse` hook, and an MCP server (`forge-db`) that exposes Postgres-stored templates so the model never invents template content or guesses dependency versions.
+2. **DB-backed project scaffolding (forge)** — `/scaffold`, `/changelog`, `/sync-template` slash commands, a `PostToolUse` hook, and the `forge-db` MCP server exposing Postgres-stored templates so the model never invents template content or guesses dependency versions.
 
-Bash scripts + markdown for the token-saver half. Node + Postgres (via `pg`) for the forge half. Tests are a zero-dep `node --test` suite in `tests/`; no build system.
+Bash + markdown for the token-saver half; Node ESM + Postgres (`pg`) for the forge half. Tests: zero-dep `node --test` suite in `tests/`. No build system.
 
-## Installation
+**Install**: `bash scripts/install.sh` (symlinks into `~/.claude/plugins/`, copies + backs up the statusline script) or `claude --plugin-dir <repo>`. Requires `python3` and `node` ≥18. Forge half additionally: `cd mcp && npm install` + `FORGE_DATABASE_URL` exported before launching Claude Code.
 
-```bash
-# Symlink into Claude plugins (preferred)
-bash scripts/install.sh
+---
 
-# Or load in place
-claude --plugin-dir /path/to/context_forge
-```
-
-`install.sh` creates `~/.claude/plugins/context_forge -> <repo>` and copies `scripts/statusline-command.sh` to `~/.claude/statusline-command.sh`.
-
-Requires `python3` (hooks + status line) and `node` ≥18 (MCP server + record-change hook). For the forge half: `npm install` inside `mcp/` and export `FORGE_DATABASE_URL` before launching Claude Code.
-
-## Architecture
+## A. Architecture
 
 ### Plugin entry points
 
 - **`.claude-plugin/plugin.json`** — plugin manifest (name, version, keywords)
-- **`.mcp.json`** — registers the `forge-db` MCP server, reads `${FORGE_DATABASE_URL}` from env, launches `mcp/server.mjs` via stdio
-- **`hooks/hooks.json`** — declares hook events: `SessionStart` → `session-start.sh`, `PostToolUse` (`Write|Edit`) → `record-change.mjs`
-- **`commands/*.md`** — slash command definitions (frontmatter with `allowed-tools` whitelist) for `/scaffold`, `/changelog`, `/sync-template`
-- **`skills/*/SKILL.md`** — each skill is a directory containing a `SKILL.md` (frontmatter + instructions) and optional `references/` docs and `scripts/`
-- **`agents/hook-error-fixer.md`** — agent definition (frontmatter: model, tools, color) + full diagnostic instructions
-- **`mcp/server.mjs`** — MCP server exposing 7 forge-db tools
+- **`.mcp.json`** — registers `forge-db`, reads `${FORGE_DATABASE_URL}`, launches `mcp/server.mjs` via stdio
+- **`hooks/hooks.json`** — `SessionStart` → `session-start.sh`, `PostToolUse` (`Write|Edit`) → `mcp/record-change.mjs` (both with timeouts)
+- **`commands/*.md`** — slash commands (frontmatter with `allowed-tools` whitelist)
+- **`skills/*/SKILL.md`** — frontmatter + instructions, optional `references/` and `scripts/`
+- **`agents/hook-error-fixer.md`** — agent definition (frontmatter: model, tools, color) + diagnostic instructions
+- **`mcp/server.mjs`** — SDK wiring; tools live in `mcp/tools.mjs`, DB helper in `mcp/db.mjs`
 - **`mcp/db/schema.sql`** — Postgres schema (templates, template_files, template_deps, projects, changelogs, template_suggestions)
 
 ### LTX output format
 
-All token-saver hooks and skills emit structured data in **LTX (Low Token eXchange Format)**:
+Token-saver hooks and some skills emit **LTX (Low Token eXchange Format)**:
 
 ```
 @v1:field1|field2|field3     ← schema header
-value|value|value             ← data rows (pipe-delimited)
+value|value|value             ← pipe-delimited data rows
 ```
 
-Human-readable warnings go to **stderr**; machine-readable LTX rows go to **stdout**. The emitters (`ltx_header`, `ltx_row`, `ltx_human`) are three one-line functions defined inline in `hooks/scripts/session-start.sh` — copy them into any new script that emits LTX.
+Human warnings → **stderr**; LTX rows → **stdout**. The three one-line emitters (`ltx_header`, `ltx_row`, `ltx_human`) live inline in `hooks/scripts/session-start.sh` — copy them into any new LTX-emitting script. A skill that emits LTX documents it in a `## LTX Schema` section; a skill that doesn't must not carry a dead schema section.
 
-Hook and skill scripts must use `$CLAUDE_PLUGIN_ROOT` (not hardcoded paths) when referencing plugin files.
+Hook and skill scripts must use `$CLAUDE_PLUGIN_ROOT` (never hardcoded paths) for plugin files. That variable only resolves inside plugin hooks — user-facing examples use real paths like `~/.claude/hooks/`.
 
 ### Session-start hook
 
-`hooks/scripts/session-start.sh` runs on every `SessionStart`. It:
-1. Checks CLAUDE.md word count against thresholds (`WARN_WORDS=600`, `CRIT_WORDS=1000`)
-2. Validates `~/.claude/settings.json` JSON syntax
-3. Emits LTX rows with schema `@v1:file|words|tokens|level`
+`hooks/scripts/session-start.sh` on every `SessionStart`: checks CLAUDE.md word counts (`WARN_WORDS=600`, `CRIT_WORDS=1000`, `-ef` guard against case-insensitive double-count), validates `~/.claude/settings.json` (emits `skipped` when python3 is absent), emits LTX schema `@v1:file|words|tokens|level`.
 
 ### Record-change hook (forge)
 
-`mcp/record-change.mjs` runs after every `Write` or `Edit`. It reads the tool event JSON on stdin, looks up the most recent project whose `root_path` is a prefix of the touched file, and inserts a `changelogs` row (`file_created` or `file_edited`). It never blocks the tool — any error exits 0. Requires `FORGE_DATABASE_URL` exported; without it (or without `mcp/node_modules` — `pg` is imported lazily), the hook is a no-op.
+`mcp/record-change.mjs` after every `Write`/`Edit`: reads the tool event JSON on stdin, attaches the file to the most recent project whose `root_path` is a prefix, inserts a `changelogs` row. **It never blocks the tool** — every error exits 0; `pg` is imported lazily and the connect timeout is 3s. Without `FORGE_DATABASE_URL` or `mcp/node_modules` it is a silent no-op **by design** — check those before declaring it broken.
 
 ### Status line script
 
-`scripts/statusline-command.sh` reads JSON from stdin and renders a colored one-line status showing: dir, git branch, model, context-window bar, CLAUDE.md token estimate, and rate-limit %. Token estimate uses `words × 1.3`. Color thresholds: green → yellow (50%/390t) → orange (75%/780t) → red (90%/1300t). Requires Claude Code v2.1.97+ for `refreshInterval` support.
+`scripts/statusline-command.sh` reads JSON from stdin, renders dir, git branch, model, context bar, CLAUDE.md token estimate (words × 1.3), rate-limit %. Fields travel `\x1f`-separated (model names and paths contain spaces). Color thresholds: green → yellow (50%/390t) → orange (75%/780t) → red (90%/1300t). Requires Claude Code v2.1.97+ for `refreshInterval`.
 
-### Forge MCP server (`mcp/server.mjs`)
+### Forge MCP server (`mcp/server.mjs` + `tools.mjs`)
 
-Stdio MCP server (`McpServer` + zod input schemas) using `@modelcontextprotocol/sdk` + `pg`. Exposes 7 tools:
+Stdio server (`McpServer` + zod raw shapes) exposing 7 tools:
 
 | Tool | Purpose |
 |------|---------|
-| `list_templates` | List template names + stack JSON (call before `/scaffold`) |
-| `get_template` | Return one template's files (verbatim content) + pinned deps |
-| `register_project` | Insert a row in `projects` after scaffolding |
-| `record_change` | Append a changelog row (used by hook + manual stack changes) |
-| `get_changelog` | Read recent changelog rows for a project (or all) |
-| `compute_suggestions` | Find recurring manual `dep_added` rows and upsert pending suggestions |
-| `apply_suggestion` | Insert the suggested dep into `template_deps`, mark suggestion applied |
+| `list_templates` | Names + stack JSON; also the only `template_id` → name map (`get_template` looks up by *name* only) |
+| `get_template` | One template's files (verbatim) + pinned deps |
+| `register_project` | Insert `projects` row; errors on unknown template name |
+| `record_change` | Append changelog row; `dep_added` requires `package` |
+| `get_changelog` | Recent rows (limit 1–500, default 50) |
+| `compute_suggestions` | Upsert recurring manual-dep suggestions |
+| `apply_suggestion` | Apply one suggestion; returns `dep_inserted` (false = package already present, existing version kept); errors on unimplemented kinds |
 
-**Anti-hallucination contract:** template names, file contents, and dependency versions are *only* what these tools return. The `/scaffold` command instructions forbid inventing names or guessing versions and require running the template's `typecheck`/`build` script to validate.
+Tool errors (unset URL, unreachable DB) surface as clear messages — report them to the user; never fabricate data to fill the gap.
 
-## Adding a New Skill
-
-1. Create `skills/<skill-name>/SKILL.md` with YAML frontmatter (`name`, `description`, `version`) followed by skill instructions
-2. If the skill emits structured data, add a `## LTX Schema` section and copy the three LTX emitter functions from `hooks/scripts/session-start.sh`
-3. Add optional `references/` docs and `scripts/` as needed — no registration required; Claude Code auto-discovers `SKILL.md` files
-
-## Adding a New Agent
-
-Create `agents/<name>.md` with YAML frontmatter:
-```yaml
 ---
-name: <name>
-model: inherit   # or claude-opus-4-5, etc.
-color: yellow    # terminal color hint
-tools: ["Read", "Write", "Grep", "Glob", "Bash"]
-description: >-
-  One-line trigger description
+
+## B. Anti-Hallucination & Value Safety (CRITICAL)
+
+1. **Template names, file contents, and dependency versions exist ONLY in forge-db tool output.** Copy verbatim — no reformatting, upgrades, or normalisation. `/scaffold` must run the template's `typecheck`/`build` to validate.
+2. **Never write undocumented Claude Code settings keys.** `autoLoadSkills`, `autoLoadMemory`, `compactOnContextFull`, `verboseOutput`, `plugins.autoEnable` do **not exist**. Real keys used in this repo's docs: `autoMemoryEnabled`, `autoCompactEnabled`/`autoCompactWindow`, `disableBundledSkills`, `disabledMcpjsonServers`, `statusLine`. Verify anything else against official docs first.
+3. **Skill bodies lazy-load** — only frontmatter descriptions cost tokens every session. Don't write skill docs that claim otherwise.
+4. **Every command written into docs or this file must exist and pass before being added.** No `npm test`, `pytest`, `npm run lint`, or `black` here — the only test entry point is `node --test`.
+5. On any forge-db error: stop and report the missing piece (env var, schema, connectivity). Zero rows means "nothing recorded", not license to guess.
+
 ---
-```
-Follow with `## When to use` examples and the agent's full instructions.
 
-## Adding a New Hook
+## C. Extending the Plugin
 
-Add a new event block to `hooks/hooks.json`. Use `$CLAUDE_PLUGIN_ROOT` for all script paths. Valid event names: `PreToolUse`, `PostToolUse`, `SessionStart`, `Stop`, `SubagentStop`, `SessionEnd`, `UserPromptSubmit`, `PreCompact`, `Notification`.
+- **Skill**: `skills/<name>/SKILL.md` with `name`/`description`/`version` frontmatter. Triggers AND anti-triggers ("Do NOT use for…") in the description. LTX emitters copied from `session-start.sh` if it emits structured data. Auto-discovered, no registration.
+- **Agent**: `agents/<name>.md` with `name`, `model: inherit`, `color`, `tools: [...]`, `description` frontmatter, then `## When to use` examples + instructions.
+- **Hook**: new event block in `hooks/hooks.json`. Valid events: `PreToolUse`, `PostToolUse`, `SessionStart`, `Stop`, `SubagentStop`, `SessionEnd`, `UserPromptSubmit`, `PreCompact`, `Notification`. Always set a `timeout`; scripts must degrade to no-op rather than block tools.
+- **Forge template**: rows in `templates`/`template_files`/`template_deps` (shape: `mcp/db/seed-example.sql`). Only `{{project_name}}` and `{{year}}` are substituted; everything else is copied verbatim.
+- **Slash command**: `commands/<name>.md` with `description`, `argument-hint`, `allowed-tools` (whitelist incl. needed `mcp__forge-db__*`). `$ARGUMENTS`, `$0`, `$1`… expand to args.
 
-## Adding a New Forge Template
+---
 
-Insert rows into `templates`, `template_files`, `template_deps` (see `mcp/db/seed-example.sql` for shape). Use `{{project_name}}` and `{{year}}` placeholders in file content — those are the only substitutions the scaffolder performs. Everything else is copied verbatim.
+## D. Agent Operating Mode
 
-## Adding a New Slash Command
+### Working agreement (ponytail: lazy senior dev)
 
-Create `commands/<name>.md` with YAML frontmatter declaring `description`, `argument-hint`, and `allowed-tools` (whitelist — including any `mcp__forge-db__*` tools you need). Body is the prompt template; `$ARGUMENTS`, `$0`, `$1`… expand to invocation args.
+Lazy = efficient, not careless. The best code is the code never written. Before writing code, stop at the first rung that holds:
 
-## Coding conduct (Karpathy guidelines)
+1. **Does this need to exist at all?** (YAGNI)
+2. **Already in this repo?** Reuse the helper/pattern a few files over.
+3. **Stdlib, native platform feature, or already-installed dep covers it?** Use it.
+4. **Can it be one line?** One line.
+5. **Only then:** the minimum code that works.
 
-These rules govern any edit made to this repository, derived from Andrej Karpathy's observations on common LLM coding mistakes:
+The ladder runs *after* understanding, never instead of it: read the task and the code it touches, trace the real flow end to end, then climb. State assumptions; multiple interpretations → present them; unclear → ask.
 
-1. **Think before coding.** State assumptions before implementing. If multiple interpretations exist, present them — do not pick silently. If something is unclear, stop and ask.
-2. **Simplicity first.** Write the minimum code that solves the problem. No speculative features, single-use abstractions, unrequested configurability, or error handling for impossible scenarios.
-3. **Surgical changes.** Touch only what the request demands. Match existing style. Do not refactor adjacent code, reformat untouched lines, or delete pre-existing dead code unless asked. Remove only orphans the current change created.
-4. **Goal-driven execution.** Transform every task into a verifiable success criterion (a passing test, a file with specific content, a green build). State a brief plan for multi-step tasks and verify each step against its criterion.
+- **Bug fix = root cause, not symptom**: grep every caller of the function you touch; one guard in the shared function beats a patch per caller — and patching only the reported path leaves siblings broken.
+- Deletion over addition; boring over clever; fewest files; shortest working diff — but the smallest change in the wrong place is a second bug.
+- No unrequested abstractions, dependencies, or boilerplate. Question complex asks: "does Y already cover X?"
+- Equal-size stdlib options → take the edge-case-correct one. Mark deliberate corner-cuts with a `ponytail:` comment naming the ceiling and upgrade path.
+- **Platform-native first**: Node built-ins over packages (`fs.mkdirSync({recursive:true})`, `crypto.randomUUID()`, `[...new Set(arr)]`); DB over app code (`UNIQUE`/`FK`/`CHECK`, `DEFAULT now()` — `schema.sql` already works this way). A wrapper earns its place only when native is genuinely insufficient.
+- **Never lazy about**: understanding the problem, validation at trust boundaries, error handling that prevents data loss, security, anything explicitly requested.
+- Non-trivial logic leaves ONE runnable check behind — in this repo, a case in `tests/repo.test.mjs`. Trivial one-liners need none.
 
-Apply judgment for trivial fixes (typos, doc rewording). Apply strictly for new skills, hooks, MCP changes, schema changes, and anything touching `mcp/`, `hooks/`, or the forge MCP contract.
+Apply judgment for trivial fixes; apply strictly for anything touching `mcp/`, `hooks/`, schema, or the forge contract. No new languages (TypeScript, Python source, Rust) without explicit ask — the stack is Bash + Node `.mjs` + Markdown + SQL, single `package.json` in `mcp/`.
 
-## Project standards (adapted from Anthropic guidelines)
-
-Adapted from the Anthropic internal standards template for this repo's actual stack (Bash + Node ESM + Markdown + Postgres) — do not paste the generic version verbatim in future sessions.
-
-### Stack (factual, not aspirational)
-
-- **Languages present:** Bash (hooks, scripts), Node.js ESM `.mjs` (MCP server + record-change hook), Markdown (skills, commands, docs), SQL (Postgres schema).
-- **Not present:** TypeScript, Bun, Python source (only `python3 -m json.tool` for debug), Rust, any third-party test framework (tests use built-in `node:test`), any linter, any bundler.
-- **Single Node package:** `mcp/package.json` (deps: `@modelcontextprotocol/sdk`, `pg`, `zod`). Nothing else has a `package.json`.
-
-### Build, install, and verify commands
+### Verify commands
 
 | Purpose | Command |
 |---------|---------|
-| Run the test suite | `node --test` (from repo root; discovers `tests/`) |
-| Symlink plugin into `~/.claude/plugins/` | `bash scripts/install.sh` |
-| Install MCP server deps | `cd mcp && npm install` |
-| Apply forge schema | `psql "$FORGE_DATABASE_URL" -f mcp/db/schema.sql` |
-| Validate every JSON file | `python3 -m json.tool <file>` |
-| Syntax-check `.mjs` | `node --check <file>` |
-| Syntax-check `.sh` | `bash -n <file>` |
-| Smoke-test MCP server | `DATABASE_URL=$FORGE_DATABASE_URL node mcp/server.mjs` (Ctrl+C to exit) |
+| Full test suite | `node --test` (repo root; discovers `tests/`) |
+| Validate JSON | `python3 -m json.tool <file>` |
+| Syntax-check | `bash -n <file>` / `node --check <file>` |
+| Smoke MCP server | `DATABASE_URL=$FORGE_DATABASE_URL node mcp/server.mjs` (Ctrl+C) |
 | Run record-change hook | `echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/x"}}' \| FORGE_DATABASE_URL=$FORGE_DATABASE_URL node mcp/record-change.mjs` |
 | Run session-start hook | `CLAUDE_PLUGIN_ROOT=$(pwd) bash hooks/scripts/session-start.sh` |
-| Test status line | `echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PWD"'"},"model":{"display_name":"Sonnet"}}' \| bash scripts/statusline-command.sh` |
+| Test status line | `echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PWD"'"},"model":{"display_name":"Fable 5"}}' \| bash scripts/statusline-command.sh` (model name must render whole) |
+| Apply forge schema | `psql "$FORGE_DATABASE_URL" -f mcp/db/schema.sql` |
 
-The only test entry point is `node --test` (built-in runner over `tests/`). There is **no `npm test`, no `pytest`, no `npm run lint`, no `black`** in this repo. Do not invent them.
+### Forced verification
 
-### Steering rules
+- `node --test` must be green **before every commit**. The suite covers JSON validity, hook config/events, frontmatter, script syntax, hook runtime behavior, and cross-references (forge-db tool names used in commands/skills, SKILL.md file refs, `.mcp.json` script path) — the broken-ref audit is automated, don't redo it by hand.
+- A successful file write ≠ correct code: run the relevant verify command from the table before saying "done".
+- **This file stays under 12,000 characters** (`wc -c CLAUDE.md`). Move detail to skill `references/`; do not pad with framing prose.
 
-1. **Never hallucinate APIs, template names, package versions, or commands.** Copy MCP tool output verbatim. Every command in this file must exist and pass before being added.
-2. **No new languages without explicit ask.** Current stack is Bash + Node `.mjs` + Markdown + SQL. Do not introduce TypeScript, Python source files, or Rust unless the user requests it.
-3. **Strict value safety.** For any value that originates in `forge-db` (template content, dependency versions, file paths from changelogs), use the exact returned value. No reformatting, no upgrades, no normalisation.
-4. **No new feature without verifiable success.** Before declaring a change done, run the relevant verify command from the table above (JSON parse, `node --check`, `bash -n`). For skill changes, run the broken-ref + second-person audit shown in this file's history.
-5. **Tests live in `tests/` and must pass before commit.** Run `node --test` from the repo root; the suite validates JSON, hook config, skill/command/agent frontmatter, script syntax, and hook runtime behavior.
-6. **Keep this file under 12,000 characters.** `wc -c CLAUDE.md` is the budget. Move detail to skill `references/` or feature-specific docs when the cap is approached. Do not pad with framing prose.
+---
+
+## DO NOT (quick checklist)
+
+- ❌ Invent template names/contents/versions (forge-db output only, verbatim) · ❌ Fabricate data when a forge tool errors or returns zero rows
+- ❌ Write undocumented settings keys (`autoLoadSkills` etc. don't exist) · ❌ Add commands to docs that you haven't run
+- ❌ `npm test` / `pytest` / `npm run lint` (only `node --test`) · ❌ New languages without ask
+- ❌ Hardcode plugin paths in hooks (use `$CLAUDE_PLUGIN_ROOT`) — but never show `$CLAUDE_PLUGIN_ROOT` in user-facing config examples
+- ❌ Let a hook block a tool (record-change exits 0 always; timeouts on every hook) · ❌ Invent hook event names
+- ❌ Claim skills bulk-load bodies (lazy-loaded; descriptions are the constant cost) · ❌ Dead LTX sections in skills that never emit LTX
+- ❌ Commit with failing `node --test` · ❌ Let this file exceed 12,000 chars
