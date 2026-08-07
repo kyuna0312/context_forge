@@ -1,7 +1,7 @@
 ---
 name: Token Status Line
 description: This skill should be used when the user asks to "add token counter to status line", "show context usage in status bar", "visualize token usage", "set up token status line", "live token counter", "show context window percentage", or wants to see token burn in the terminal status bar.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Token Status Line
@@ -20,6 +20,10 @@ ctx [████████░░] 82%  │  md:~650t
 Rate limit usage appears only when near limits (≥70%) and on Claude.ai accounts.
 
 ## Quick Setup
+
+`bash scripts/install.sh` (from the plugin repo) already performs Step 1 —
+and backs up a modified copy before overwriting. Re-run it after updating
+the plugin: the copy in `~/.claude/` does not update itself.
 
 **Step 1**: Copy plugin script to a stable path (recommended — plugin path may change):
 
@@ -79,32 +83,14 @@ Requires Claude Code v2.1.97 or later.
 Test script output before wiring it up:
 
 ```bash
-echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PWD"'"}}' \
+echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PWD"'"},"model":{"display_name":"Fable 5"}}' \
   | bash ~/.claude/statusline-command.sh
 ```
 
-Should print a colored bar with `ctx [███████░░░] 72%` and CLAUDE.md token count.
-
-## LTX Schema
-
-Emit structured output as LTX rows when reporting current status line state.
-
-```
-@v1:context_pct|bar|md_tokens|color
-```
-
-| Field | Description |
-|-------|-------------|
-| `context_pct` | Context window usage percentage (0–100) |
-| `bar` | 10-char visual bar string (e.g. `████████░░`) |
-| `md_tokens` | Estimated tokens loaded from CLAUDE.md files |
-| `color` | `green`, `yellow`, `orange`, `red` based on context % |
-
-Example:
-```
-@v1:context_pct|bar|md_tokens|color
-82|████████░░|650|orange
-```
+Should print a colored bar with the full model name and `ctx [███████░░░] 72%`
+plus the CLAUDE.md token count. If the model name renders truncated ("Fable"
+without the "5"), the installed copy predates the field-separator fix —
+re-run `install.sh`.
 
 ## Additional Resources
 
