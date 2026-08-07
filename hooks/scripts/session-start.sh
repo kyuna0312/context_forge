@@ -23,7 +23,8 @@ check_claudemd_size() {
   fi
 
   local word_count token_estimate level
-  word_count=$(wc -w < "$file_path")
+  # $((...)) strips the leading whitespace macOS wc emits
+  word_count=$(( $(wc -w < "$file_path") ))
   token_estimate=$(( word_count * 13 / 10 ))
 
   if [ "$word_count" -ge "$CRIT_WORDS" ]; then
@@ -47,6 +48,11 @@ validate_settings_json() {
     return 0
   fi
 
+  if ! command -v python3 >/dev/null 2>&1; then
+    ltx_row "$settings_path" "0" "0" "skipped"
+    return 0
+  fi
+
   if ! python3 -c "import json, sys; json.load(open(sys.argv[1]))" "$settings_path" 2>/dev/null; then
     ltx_row "$settings_path" "0" "0" "invalid"
     ltx_human "⚠ TOKEN SAVER: settings.json has invalid JSON. Run /debug-hooks"
@@ -55,12 +61,18 @@ validate_settings_json() {
   fi
 }
 
+# -ef guard: on case-insensitive filesystems (macOS default) CLAUDE.md and
+# claude.md are the same file — without it the file is reported twice.
 check_claudemd_size "$HOME/.claude/CLAUDE.md" "~/.claude/CLAUDE.md"
-check_claudemd_size "$HOME/.claude/claude.md" "~/.claude/claude.md"
+if ! [ "$HOME/.claude/claude.md" -ef "$HOME/.claude/CLAUDE.md" ]; then
+  check_claudemd_size "$HOME/.claude/claude.md" "~/.claude/claude.md"
+fi
 
 if [ -n "${CLAUDE_PROJECT_DIR:-}" ]; then
   check_claudemd_size "$CLAUDE_PROJECT_DIR/CLAUDE.md" "CLAUDE.md (project)"
-  check_claudemd_size "$CLAUDE_PROJECT_DIR/claude.md" "claude.md (project)"
+  if ! [ "$CLAUDE_PROJECT_DIR/claude.md" -ef "$CLAUDE_PROJECT_DIR/CLAUDE.md" ]; then
+    check_claudemd_size "$CLAUDE_PROJECT_DIR/claude.md" "claude.md (project)"
+  fi
 fi
 
 validate_settings_json

@@ -125,5 +125,5 @@ Do **not** call `record_change` from this skill — it is reserved for the hook 
 
 - `commands/changelog.md` — `/changelog` slash command (thin wrapper, same data source).
 - `commands/sync-template.md` — `/sync-template` slash command (same drift + apply flow).
-- `hooks/scripts/record-change.mjs` — `PostToolUse` hook that writes the changelog rows this skill reads.
+- `mcp/record-change.mjs` — `PostToolUse` hook that writes the changelog rows this skill reads.
 - `mcp/db/schema.sql` — Postgres schema defining the tables and the `change_type` enum-as-text.

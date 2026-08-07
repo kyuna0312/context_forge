@@ -18,9 +18,7 @@ async function main() {
   const filePath = input.file_path || input.path;
   if (!filePath) return;
 
-  const changeType =
-    tool === "Write" ? "file_created" :
-    tool === "Edit"  ? "file_edited"  : "file_edited";
+  const changeType = tool === "Write" ? "file_created" : "file_edited";
 
   const url = process.env.FORGE_DATABASE_URL || process.env.DATABASE_URL;
   if (!url) return;
@@ -28,7 +26,9 @@ async function main() {
   let pg;
   try { pg = (await import("pg")).default; } catch { return; }
 
-  const client = new pg.Client({ connectionString: url });
+  // pg has no default connect timeout — without this, an unreachable DB
+  // host would hang the hook (and every Write/Edit) until the hook timeout.
+  const client = new pg.Client({ connectionString: url, connectionTimeoutMillis: 3000 });
   await client.connect();
   try {
     // Best-effort: attach to the most recent project whose root_path is a prefix.

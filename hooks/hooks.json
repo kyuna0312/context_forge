@@ -19,7 +19,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PLUGIN_ROOT/mcp/record-change.mjs\""
+            "command": "node \"$CLAUDE_PLUGIN_ROOT/mcp/record-change.mjs\"",
+            "timeout": 10
           }
         ]
       }
