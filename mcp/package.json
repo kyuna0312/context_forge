@@ -5,7 +5,7 @@
   "type": "module",
   "description": "MCP server for the project-forge Claude Code plugin",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "pg": "^8.13.0"
   }
 }
