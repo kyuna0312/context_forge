@@ -48,7 +48,7 @@ Add important information before compaction:
       "matcher": "*",
       "hooks": [{
         "type": "command",
-        "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/pre-compact.sh"
+        "command": "bash ~/.claude/hooks/pre-compact.sh"
       }]
     }]
   }

@@ -69,6 +69,51 @@ test("every command declares description and allowed-tools", () => {
   }
 });
 
+// Parsed from source, not imported — CI has no mcp/node_modules.
+function forgeToolNames() {
+  const src = fs.readFileSync(path.join(root, "mcp/tools.mjs"), "utf8");
+  return [...src.matchAll(/^\s*name: "(\w+)"/gm)].map((m) => m[1]);
+}
+
+test("forge-db tool names are unique; commands/skills only reference real ones", () => {
+  const names = forgeToolNames();
+  assert.ok(names.length >= 7, `expected the forge-db tools, found ${names.length}`);
+  assert.equal(new Set(names).size, names.length, "duplicate tool name in mcp/tools.mjs");
+  for (const f of [...walk(path.join(root, "commands"), ".md"), ...walk(path.join(root, "skills"), ".md")]) {
+    const src = fs.readFileSync(f, "utf8");
+    for (const [, tool] of src.matchAll(/mcp__forge-db__(\w+)/g)) {
+      assert.ok(names.includes(tool),
+        `${path.relative(root, f)}: references unknown forge-db tool "${tool}"`);
+    }
+  }
+});
+
+test("SKILL.md repo-path references resolve to real files", () => {
+  const skillsDir = path.join(root, "skills");
+  for (const e of fs.readdirSync(skillsDir, { withFileTypes: true })) {
+    if (!e.isDirectory()) continue;
+    const skillDir = path.join(skillsDir, e.name);
+    const src = fs.readFileSync(path.join(skillDir, "SKILL.md"), "utf8");
+    for (const [, ref] of src.matchAll(/`((?:references|scripts|commands|hooks|mcp|agents|tests)\/[\w./-]+\.\w+)`/g)) {
+      assert.ok(
+        fs.existsSync(path.join(skillDir, ref)) || fs.existsSync(path.join(root, ref)),
+        `skills/${e.name}/SKILL.md: broken reference ${ref}`
+      );
+    }
+  }
+});
+
+test(".mcp.json server entry points at an existing script", () => {
+  const cfg = JSON.parse(fs.readFileSync(path.join(root, ".mcp.json"), "utf8"));
+  for (const [name, srv] of Object.entries(cfg.mcpServers)) {
+    for (const arg of srv.args ?? []) {
+      if (!arg.includes("${CLAUDE_PLUGIN_ROOT}")) continue;
+      const rel = arg.replace("${CLAUDE_PLUGIN_ROOT}/", "");
+      assert.ok(fs.existsSync(path.join(root, rel)), `${name}: missing server script ${rel}`);
+    }
+  }
+});
+
 test("every agent declares name, description, tools", () => {
   for (const f of walk(path.join(root, "agents"), ".md")) {
     const fm = frontmatter(f);
@@ -98,18 +143,23 @@ test("session-start hook exits 0 and emits an LTX header", () => {
   });
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /^@v1:/, `expected LTX header, got: ${r.stdout}`);
+  for (const line of r.stdout.trim().split("\n").slice(1)) {
+    assert.equal(line.split("|").length, 4, `malformed LTX row (want 4 fields): "${line}"`);
+  }
 });
 
 test("record-change hook is a no-op (exit 0) without a database", () => {
   const env = { ...process.env };
   delete env.FORGE_DATABASE_URL;
   delete env.DATABASE_URL;
-  const r = spawnSync(process.execPath, [path.join(root, "mcp/record-change.mjs")], {
-    input: '{"tool_name":"Write","tool_input":{"file_path":"/tmp/x"}}',
-    env,
-    encoding: "utf8",
-  });
-  assert.equal(r.status, 0, `hook must never block the tool: ${r.stderr}`);
+  for (const input of ['{"tool_name":"Write","tool_input":{"file_path":"/tmp/x"}}', "not json at all"]) {
+    const r = spawnSync(process.execPath, [path.join(root, "mcp/record-change.mjs")], {
+      input,
+      env,
+      encoding: "utf8",
+    });
+    assert.equal(r.status, 0, `hook must never block the tool (input: ${input}): ${r.stderr}`);
+  }
 });
 
 test("statusline renders sample input", () => {

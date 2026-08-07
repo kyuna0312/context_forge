@@ -56,21 +56,23 @@ Claude will summarize current context and continue with reduced token usage.
 
 ### Option 3: PreCompact Hook
 
-Configure hook to run before compaction for custom summary logic:
+Configure hook to run before compaction for custom summary logic. In the
+user's own `~/.claude/settings.json` use a real path — `$CLAUDE_PLUGIN_ROOT`
+only resolves inside a plugin's own hooks.json:
 
 ```json
 {
   "PreCompact": [{
     "hooks": [{
       "type": "command",
-      "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/pre-compact.sh",
+      "command": "bash ~/.claude/hooks/pre-compact.sh",
       "timeout": 15
     }]
   }]
 }
 ```
 
-Create `hooks/scripts/pre-compact.sh` with custom pre-compaction logic, for example:
+Create `~/.claude/hooks/pre-compact.sh` with custom pre-compaction logic, for example:
 
 ```bash
 #!/usr/bin/env bash
