@@ -9,7 +9,7 @@ context_forge is a Claude Code plugin that combines two things in one package:
 1. **Token-waste reduction** — 15 skills, one diagnostic agent, a session-start hook, and a status line script.
 2. **DB-backed project scaffolding** — three slash commands (`/scaffold`, `/changelog`, `/sync-template`), a `PostToolUse` hook, and an MCP server (`forge-db`) that exposes Postgres-stored templates so the model never invents template content or guesses dependency versions.
 
-Bash scripts + markdown for the token-saver half. Node + Postgres (via `pg`) for the forge half. No tests, no build system. The MCP server has its own `package.json` under `mcp/`.
+Bash scripts + markdown for the token-saver half. Node + Postgres (via `pg`) for the forge half. Tests are a zero-dep `node --test` suite in `tests/`; no build system.
 
 ## Installation
 
@@ -87,6 +87,7 @@ Stdio MCP server (`McpServer` + zod input schemas) using `@modelcontextprotocol/
 1. Create `skills/<skill-name>/SKILL.md` with YAML frontmatter (`name`, `description`, `version`) followed by skill instructions
 2. If the skill emits structured data, add a `## LTX Schema` section and copy the three LTX emitter functions from `hooks/scripts/session-start.sh`
 3. Add optional `references/` docs and `scripts/` as needed — no registration required; Claude Code auto-discovers `SKILL.md` files
+
 ## Adding a New Agent
 
 Create `agents/<name>.md` with YAML frontmatter:
@@ -114,33 +115,6 @@ Insert rows into `templates`, `template_files`, `template_deps` (see `mcp/db/see
 
 Create `commands/<name>.md` with YAML frontmatter declaring `description`, `argument-hint`, and `allowed-tools` (whitelist — including any `mcp__forge-db__*` tools you need). Body is the prompt template; `$ARGUMENTS`, `$0`, `$1`… expand to invocation args.
 
-## Debugging
-
-```bash
-# Syntax-check a hook script
-bash -n hooks/scripts/session-start.sh
-
-# Run session-start hook manually
-CLAUDE_PLUGIN_ROOT=$(pwd) bash hooks/scripts/session-start.sh
-
-# Run record-change hook with a fake tool event
-echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/x"}}' \
-  | FORGE_DATABASE_URL="$FORGE_DATABASE_URL" node mcp/record-change.mjs
-
-# Smoke-test the MCP server (will hang waiting for MCP stdio — Ctrl+C to exit)
-DATABASE_URL="$FORGE_DATABASE_URL" node mcp/server.mjs
-
-# Validate settings.json
-python3 -m json.tool ~/.claude/settings.json
-
-# Test status line script
-echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PWD"'"},"model":{"display_name":"Sonnet"}}' \
-  | bash scripts/statusline-command.sh
-
-# Verify plugin symlink
-ls -la ~/.claude/plugins/context_forge
-```
-
 ## Coding conduct (Karpathy guidelines)
 
 These rules govern any edit made to this repository, derived from Andrej Karpathy's observations on common LLM coding mistakes:
@@ -154,7 +128,7 @@ Apply judgment for trivial fixes (typos, doc rewording). Apply strictly for new 
 
 ## Project standards (adapted from Anthropic guidelines)
 
-Adapted from the Anthropic internal coding standards template. The generic template assumes TypeScript/Python/Rust + a test suite; this repo is Bash + Node ESM + Markdown + Postgres. Do not paste the generic version verbatim in future sessions.
+Adapted from the Anthropic internal standards template for this repo's actual stack (Bash + Node ESM + Markdown + Postgres) — do not paste the generic version verbatim in future sessions.
 
 ### Stack (factual, not aspirational)
 
@@ -176,6 +150,7 @@ Adapted from the Anthropic internal coding standards template. The generic templ
 | Smoke-test MCP server | `DATABASE_URL=$FORGE_DATABASE_URL node mcp/server.mjs` (Ctrl+C to exit) |
 | Run record-change hook | `echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/x"}}' \| FORGE_DATABASE_URL=$FORGE_DATABASE_URL node mcp/record-change.mjs` |
 | Run session-start hook | `CLAUDE_PLUGIN_ROOT=$(pwd) bash hooks/scripts/session-start.sh` |
+| Test status line | `echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PWD"'"},"model":{"display_name":"Sonnet"}}' \| bash scripts/statusline-command.sh` |
 
 The only test entry point is `node --test` (built-in runner over `tests/`). There is **no `npm test`, no `pytest`, no `npm run lint`, no `black`** in this repo. Do not invent them.
 
