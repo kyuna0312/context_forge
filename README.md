@@ -7,7 +7,7 @@ A Claude Code plugin that combines two things:
 1. **Token-waste reduction** — 15 skills, a diagnostic agent, a session-start hook, and a live status line showing context usage.
 2. **DB-backed project scaffolding** — `/scaffold`, `/changelog`, `/sync-template` slash commands plus an MCP server (`forge-db`) that stores templates, file content, and pinned dependency versions in Postgres so the model never invents them.
 
-**Docs:** how to use it → [docs/USAGE.md](docs/USAGE.md) · end-to-end flows → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · backlog & deliberate ceilings → [docs/ROADMAP.md](docs/ROADMAP.md) · agent rules → [CLAUDE.md](CLAUDE.md)
+**Docs:** how to use it → [docs/USAGE.md](docs/USAGE.md) · end-to-end flows → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · backlog & deliberate ceilings → [docs/ROADMAP.md](docs/ROADMAP.md) · agent rules → [CLAUDE.md](CLAUDE.md) · distilled reference → [wiki/](wiki/index.md)
 
 ---
 
@@ -274,11 +274,15 @@ context_forge/
 │       ├── schema.sql           # Postgres tables for templates + changelogs
 │       └── seed-example.sql     # One example template (node-ts-basic)
 ├── scripts/
-│   ├── install.sh               # Installation helper (symlinks plugin)
-│   ├── uninstall.sh             # Removes symlink + statusline copy
+│   ├── install.sh               # Registers local marketplace + installs plugin
+│   ├── uninstall.sh             # Uninstalls plugin, marketplace + statusline copy
 │   └── statusline-command.sh    # Status line renderer (copy to ~/.claude/)
 ├── tests/
 │   └── repo.test.mjs            # Zero-dep validation suite (node --test)
+├── wiki/                        # Distilled knowledge base (llm-wiki skill) — read before raw docs
+│   ├── index.md                 # Page catalog
+│   ├── log.md                   # Append-only ingest log
+│   └── *.md                     # One page per topic
 └── skills/
     ├── auto-compact/
     ├── check-claudemd-size/
