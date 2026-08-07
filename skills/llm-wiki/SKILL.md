@@ -1,7 +1,7 @@
 ---
 name: LLM Wiki
-description: This skill should be used when the user says "build a wiki", "maintain a wiki", "ingest docs into wiki", "query my wiki", "set up llm wiki", "wiki-based knowledge base", "stop re-reading docs every session", "persistent knowledge base", or "compress my docs into wiki pages".
-version: 1.1.0
+description: This skill should be used when the user says "build a wiki", "maintain a wiki", "ingest docs into wiki", "query my wiki", "set up llm wiki", "wiki-based knowledge base", "stop re-reading docs every session", "persistent knowledge base", or "compress my docs into wiki pages". Do NOT use for source code (grep the code — a wiki copy of it rots) or for one-off questions about a document.
+version: 1.2.0
 ---
 
 # LLM Wiki
@@ -79,8 +79,11 @@ When user asks a question:
 1. Search `wiki/index.md` for relevant pages
 2. Read matching wiki pages
 3. Synthesize answer with citations: `(wiki/[page].md)`
-4. If the answer reveals new insight worth keeping, create a new wiki page for it
-5. Append to `wiki/log.md`: `[DATE] QUERY: [question] → [pages used]`
+4. Create a new page only if answering required going back to raw sources —
+   that gap is the signal a page is missing. Synthesis alone is not a page.
+5. Log to `wiki/log.md` only when the wiki changed (`[DATE] INGEST/UPDATE: …`).
+   Don't log read-only queries — a write per question is ceremony, and the
+   log would outgrow the wiki.
 
 ### Lint: Health Check
 
@@ -88,10 +91,13 @@ Periodically check wiki integrity:
 
 ```
 Contradictions:  pages with conflicting claims
-Stale pages:     last updated > 90 days AND source has changed
+Stale pages:     source file's mtime is newer than the page's "Last updated"
 Orphaned pages:  not referenced in index.md
 Missing links:   [[references]] with no matching file
 ```
+
+A stale page is worse than no page — it answers confidently and wrong.
+Re-ingest or delete; never leave it.
 
 Report format:
 ```
@@ -113,11 +119,21 @@ Recommendation: [action]
 | Reference 3 wiki pages | ~600 tokens |
 | **Savings** | **~96%** |
 
+## When NOT to Build a Wiki
+
+- **Source code** — the code is its own source of truth; a wiki copy drifts
+  the moment the code changes. Wiki *decisions and concepts*, grep the code.
+- **Sources smaller than their page** (short README, config file) —
+  re-reading the original is cheaper than maintaining a copy.
+- **One-off questions** — answer from the doc directly; a wiki pays off on
+  the second read, not the first.
+- **Anything with a maintained upstream reference** (official API docs you
+  can fetch) — wiki only the project-specific deltas and gotchas.
+
 ## Integration with context_forge
 
-- Run `/estimate-tokens` after wiki setup to measure baseline
-- Add `wiki/` reference to CLAUDE.md using `/optimize-claudemd`
-- Session-start hook warns if raw docs loaded but wiki exists
+- Run `/context_forge:estimate-tokens` after wiki setup to measure baseline
+- Add the `wiki/` reference to CLAUDE.md via `/context_forge:optimize-claudemd`
 
 ## Additional Resources
 

@@ -3,7 +3,7 @@
 ## Page Templates
 
 ### Concept Page
-```markdown
+````markdown
 # [Concept Name]
 _Last updated: [DATE] | Source: [origin file/URL]_
 
@@ -23,10 +23,10 @@ _Last updated: [DATE] | Source: [origin file/URL]_
 ## Related
 - [[related-topic-1]]
 - [[related-topic-2]]
-```
+````
 
 ### API/Interface Page
-```markdown
+````markdown
 # [API/Module Name]
 _Last updated: [DATE] | Source: [origin]_
 
@@ -48,7 +48,7 @@ _Last updated: [DATE] | Source: [origin]_
 
 ## Related
 - [[related-page]]
-```
+````
 
 ### Decision Log Page
 ```markdown
