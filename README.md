@@ -16,11 +16,11 @@ A Claude Code plugin that combines two things:
 | `optimize-claudemd` | Compresses bloated CLAUDE.md — cuts 40–80% of tokens loaded every session |
 | `low-token-mode` | Switches Claude to terse response style — cuts reply tokens by 30–50% |
 | `reset-context` | Safely resets context window when near full — prevents hard stops |
-| `tune-settings` | Diffs and applies token-saving settings (`autoLoadMemory`, `autoLoadSkills`, etc.) |
+| `tune-settings` | Diffs and applies token-saving settings (`autoMemoryEnabled`, `disableBundledSkills`, `disabledMcpjsonServers`) |
 | `manage-skills` | Audits loaded skills, disables unused ones — reduces session overhead |
 | `project-isolation` | Scopes skills and hooks to current project only |
 | `estimate-tokens` | Estimates tokens in any file before loading it |
-| `auto-compact` | Configures `compactOnContextFull` — auto-compacts instead of stopping |
+| `auto-compact` | Tunes `autoCompactEnabled` / `autoCompactWindow` — auto-compacts instead of stopping |
 | `settings-diff` | Shows before/after diff before writing any settings change |
 | `check-claudemd-size` | Reports CLAUDE.md word/token count with color-coded warnings |
 | `token-statusline` | Adds live context bar to Claude Code status line |
@@ -31,7 +31,7 @@ A Claude Code plugin that combines two things:
 
 **Agent:** `hook-error-fixer` — diagnoses and auto-fixes broken hook configurations.
 
-**Hook:** Session-start script that warns when CLAUDE.md exceeds size thresholds.
+**Hook:** Session-start script that warns when CLAUDE.md exceeds size thresholds and validates settings.json.
 
 **Status line:**
 ```
@@ -107,7 +107,7 @@ git clone https://github.com/kyuna0312/context_forge.git ~/context_forge
 bash ~/context_forge/scripts/install.sh
 ```
 
-The install script symlinks the plugin into `~/.claude/plugins/context_forge`.
+The install script symlinks the plugin into `~/.claude/plugins/context_forge`, copies the status line script to `~/.claude/` (backing up a modified copy first), and warns if `node`/`python3` are missing. Re-run it after pulling plugin updates so the statusline copy stays current.
 
 ### Option D — Use in place (Desktop)
 
@@ -133,7 +133,7 @@ Zero-dependency validation suite using Node's built-in test runner:
 node --test
 ```
 
-Validates every JSON file, hook config and event names, skill/command/agent frontmatter, shell and `.mjs` syntax, and runs the hooks + statusline against sample input. Runs in CI on every push (`.github/workflows/test.yml`).
+Validates every JSON file, hook config and event names, skill/command/agent frontmatter, shell and `.mjs` syntax, and cross-references (forge-db tool names used by commands/skills, file paths referenced in SKILL.md, the `.mcp.json` server script), then runs the hooks + statusline against sample input. Runs in CI on every push (`.github/workflows/test.yml`).
 
 ---
 
@@ -165,11 +165,11 @@ chmod +x ~/.claude/statusline-command.sh
 **Test before wiring up:**
 
 ```bash
-echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PWD"'"}}' \
+echo '{"context_window":{"used_percentage":72},"workspace":{"current_dir":"'"$PWD"'"},"model":{"display_name":"Fable 5"}}' \
   | bash ~/.claude/statusline-command.sh
 ```
 
-Expected output: `ctx [███████░░░] 72%`
+Expected output: `… Fable 5 │ ctx [███████░░░] 72% │ …` — the model name must render whole; a truncated name means the installed copy is outdated (re-run `install.sh`).
 
 **Color thresholds:**
 
@@ -231,7 +231,6 @@ value|value|value
 |-------|------------|
 | `estimate-tokens` | `@v1:source\|words\|tokens\|status` |
 | `check-claudemd-size` | `@v1:file\|words\|tokens\|level` |
-| `token-statusline` | `@v1:context_pct\|bar\|md_tokens\|color` |
 | `debug-hooks` | `@v1:hook\|status\|error\|fix` |
 | `tune-settings` | `@v1:setting\|current\|recommended\|action` |
 
