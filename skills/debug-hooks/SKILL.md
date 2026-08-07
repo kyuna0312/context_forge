@@ -1,7 +1,7 @@
 ---
 name: Debug Hooks
-description: This skill should be used when the user says "startup hook error", "hook not working", "debug hooks", "fix hook error", "SessionStart error", "hook script failing", "node:internal/modules error", "diagnose hook", or sees hook-related errors in Claude Code.
-version: 1.1.0
+description: This skill should be used when the user says "startup hook error", "hook not working", "debug hooks", "fix hook error", "SessionStart error", "hook script failing", "node:internal/modules error", "diagnose hook", or sees hook-related errors in Claude Code. Do NOT use for MCP server connection errors — those live in .mcp.json, not hooks.
+version: 1.2.0
 ---
 
 # Debug Hooks
@@ -57,15 +57,24 @@ Fix procedure:
 find ~/.claude -name "hooks.json" 2>/dev/null
 grep -r "hooks" ~/.claude/settings.json
 
-# Step 2: Test each hook script manually
-bash [hook-script-path]
+# Step 2: Static-check each hook script (safe — no side effects)
+bash -n [script].sh
+node --check [script].mjs
 
 # Step 3: Check node/python availability
 which node && node --version
 which python3 && python3 --version
 
 # Step 4: Validate JSON syntax
-cat ~/.claude/settings.json | python3 -m json.tool
+python3 -m json.tool ~/.claude/settings.json
+```
+
+Run a hook script manually only when it's plausibly side-effect-free — a
+hook may write files or hit a database; reproduce errors with static checks
+first. Or run the bundled validator, which does all of the above:
+
+```bash
+CLAUDE_PLUGIN_ROOT=[plugin-dir] bash [plugin-dir]/skills/debug-hooks/scripts/validate-hooks.sh [config-file]
 ```
 
 ## Fix Hook Schema Errors

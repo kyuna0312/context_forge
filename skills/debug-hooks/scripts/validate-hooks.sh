@@ -70,7 +70,10 @@ for event, entries in hooks.items():
     for entry in entries:
         for hook in entry.get("hooks", []):
             if hook.get("type") == "command":
-                print(f"CMD:{hook['command']}")
+                print(f"CMD:{hook.get('command', '')}")
+                t = hook.get("timeout")
+                if t is not None and not isinstance(t, (int, float)):
+                    print(f"WARN_TIMEOUT:{event}: timeout is {t!r} — must be a number, not a string")
 PYEOF
 }
 
@@ -90,6 +93,9 @@ check_hook_events() {
       ERROR_ENTRIES:*)
         fail "${line#ERROR_ENTRIES:} entries is not an array"
         ;;
+      WARN_TIMEOUT:*)
+        warn "${line#WARN_TIMEOUT:}"
+        ;;
     esac
   done <<< "$(extract_hook_entries)"
 
@@ -107,8 +113,11 @@ check_hook_scripts() {
 
     local script_path=""
     for token in $cmd; do
+      # Strip surrounding quotes — hook commands typically quote their paths
+      token="${token%\"}"; token="${token#\"}"
+      token="${token%\'}"; token="${token#\'}"
       case "$token" in
-        /*|~/*|./*)
+        /*|~/*|./*|\$CLAUDE_PLUGIN_ROOT/*|\$HOME/*|\${CLAUDE_PLUGIN_ROOT}/*|\${HOME}/*)
           script_path="$token"
           break
           ;;
@@ -120,9 +129,18 @@ check_hook_scripts() {
       continue
     fi
 
-    # Expand $VAR references without eval
-    local expanded_path="${script_path/\$CLAUDE_PLUGIN_ROOT/${CLAUDE_PLUGIN_ROOT:-}}"
+    # A plugin path can't be checked without the root — warn, don't fail
+    if [ -z "${CLAUDE_PLUGIN_ROOT:-}" ] && [[ "$script_path" == *CLAUDE_PLUGIN_ROOT* ]]; then
+      warn "Cannot expand $script_path — set CLAUDE_PLUGIN_ROOT to validate plugin paths"
+      continue
+    fi
+
+    # Expand $VAR references and leading ~ without eval
+    local expanded_path="${script_path/\$\{CLAUDE_PLUGIN_ROOT\}/${CLAUDE_PLUGIN_ROOT:-}}"
+    expanded_path="${expanded_path/\$CLAUDE_PLUGIN_ROOT/${CLAUDE_PLUGIN_ROOT:-}}"
+    expanded_path="${expanded_path/\$\{HOME\}/$HOME}"
     expanded_path="${expanded_path/\$HOME/$HOME}"
+    expanded_path="${expanded_path/#\~/$HOME}"
 
     if [ ! -f "$expanded_path" ]; then
       fail "Script missing: $expanded_path"
@@ -131,7 +149,11 @@ check_hook_scripts() {
 
     echo "✓ Script exists: $expanded_path"
 
-    if [ ! -x "$expanded_path" ]; then
+    # +x only matters when the script itself is the command; invocation via
+    # an interpreter (bash/node/python3 script) needs no execute bit.
+    local first_token="${cmd%% *}"
+    first_token="${first_token%\"}"; first_token="${first_token#\"}"
+    if [ "$first_token" = "$script_path" ] && [ ! -x "$expanded_path" ]; then
       warn "Not executable: $expanded_path — fix: chmod +x $expanded_path"
     fi
 
@@ -150,6 +172,15 @@ check_hook_scripts() {
       else
         fail "Python syntax error in $expanded_path:"
         python3 -m py_compile "$expanded_path" 2>&1 | head -3
+      fi
+    fi
+
+    if [[ "$expanded_path" == *.mjs || "$expanded_path" == *.js || "$expanded_path" == *.cjs ]]; then
+      if node --check "$expanded_path" 2>/dev/null; then
+        echo "  ✓ Node syntax OK"
+      else
+        fail "Node syntax error in $expanded_path:"
+        node --check "$expanded_path" 2>&1 | head -3
       fi
     fi
   done <<< "$(extract_hook_entries)"
