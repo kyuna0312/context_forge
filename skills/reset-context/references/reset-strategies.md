@@ -110,11 +110,12 @@ See CONTEXT.md for full state. Next step: [X]
 
 ## Token Cost of NOT Resetting
 
-| Context size | Cost per response |
-|-------------|------------------|
-| 10k tokens | ~$0.03 |
-| 50k tokens | ~$0.15 |
-| 100k tokens | ~$0.30 |
-| 150k tokens (near limit) | ~$0.45 |
+Every response re-pays the whole context as input tokens:
 
-Reset at 80k saves ~$0.10-0.20 per response.
+```
+cost per response ≈ context tokens × input price per token
+```
+
+At 150k tokens near the limit, each response costs 15× what it did at 10k —
+for current per-token rates, see https://www.anthropic.com/pricing. Resetting
+from 80k+ back to a lean summary pays for itself within a few responses.

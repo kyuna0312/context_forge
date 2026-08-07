@@ -18,7 +18,7 @@ Claude Code passes JSON on stdin; script outputs ANSI-colored text.
     "git_worktree": "..."
   },
   "model": {
-    "display_name": "claude-sonnet-4-6"
+    "display_name": "Fable 5"
   },
   "rate_limits": {
     "5h":  { "used_percentage": 23.0, "resets_at": "2025-..." },
@@ -71,9 +71,9 @@ Then wire up:
 
 Shows: `ctx [████████░░] 82%  │  md:~650t`
 
-### Option B: Extend existing status line
+### Option B: Extend an existing status line
 
-If you have an existing status line script, add token data to it.
+If you have your own status line script, add the token bar to it.
 
 In existing script, after extracting `used_pct`:
 
@@ -94,27 +94,6 @@ ctx_color="\033[38;2;157;255;204m"   # green
 [ "$used_int" -ge 90 ] && ctx_color="\033[38;2;255;120;120m"   # red
 
 printf " ${ctx_color}ctx [${bar}] ${used_int}%%\033[0m"
-```
-
-### Option C: Patch Lucy Edgerunner script
-
-The existing `~/.claude/statusline-command.sh` already shows `ctx:N%`.
-To upgrade it to a bar visualization, replace the `ctx_part` section:
-
-```bash
-# Replace this:
-ctx_part=" ctx:${used_int}%"
-
-# With this:
-filled=$(( used_int / 10 ))
-empty=$(( 10 - filled ))
-bar=""; for i in $(seq 1 $filled); do bar="${bar}█"; done
-for i in $(seq 1 $empty); do bar="${bar}░"; done
-
-ctx_color="$peach"
-[ "$used_int" -ge 75 ] && ctx_color="\033[38;2;255;140;80m"
-[ "$used_int" -ge 90 ] && ctx_color="\033[38;2;255;80;80m"
-ctx_part=" ${ctx_color}ctx [${bar}] ${used_int}%${reset}"
 ```
 
 ---

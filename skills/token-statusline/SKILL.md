@@ -1,7 +1,7 @@
 ---
 name: Token Status Line
 description: This skill should be used when the user asks to "add token counter to status line", "show context usage in status bar", "visualize token usage", "set up token status line", "live token counter", "show context window percentage", or wants to see token burn in the terminal status bar.
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Token Status Line
@@ -52,7 +52,7 @@ chmod +x ~/.claude/statusline-command.sh
 If `settings.json` already has a `statusLine.command`, choose:
 
 - **Replace**: Swap the `command` path to `statusline-command.sh`
-- **Extend**: Add the bar rendering block to the existing script (see `references/statusline-setup.md` Option B/C)
+- **Extend**: Add the bar rendering block to the existing script (see `references/statusline-setup.md` Option B)
 
 ## Color Thresholds
 

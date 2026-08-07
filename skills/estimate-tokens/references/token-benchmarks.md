@@ -25,22 +25,17 @@
 | 600 words (bloated) | ~780 |
 | 1,000 words (critical) | ~1,300 |
 
-### Skills (SKILL.md body)
-| Size | Tokens |
-|------|--------|
-| 500 words | ~650 |
-| 1,500 words (target) | ~1,950 |
-| 3,000 words (max) | ~3,900 |
-| 5,000 words (too large) | ~6,500 |
+### Skills — lazy-loaded, two separate costs
 
-### Plugins (all skill bodies combined)
-| # Skills in plugin | Avg tokens per plugin |
-|--------------------|-----------------------|
-| 1 skill | ~1,950 |
-| 5 skills | ~9,750 |
-| 10 skills | ~19,500 |
+| Component | When paid | Typical size |
+|-----------|-----------|--------------|
+| Frontmatter description | Every session (constant) | ~50–150 tokens each |
+| SKILL.md body | Only when invoked | body words × 1.3 |
 
-### Memory files (~/.remember/*.md)
+A plugin with 10 skills costs ~500–1,500 tokens of descriptions per
+session; a 5,000-word body you never invoke costs nothing.
+
+### Memory files (`.remember/*.md`, when loaded)
 | Count | Avg tokens |
 |-------|-----------|
 | 1 file | ~390 |
@@ -50,41 +45,38 @@
 ## Total Session Budget Example
 
 ```
-Component                    Tokens
+Component                          Tokens
 ------------------------------------------
-System prompt (base)          ~2,000
-Global CLAUDE.md (500 words)  ~650
-Project CLAUDE.md (100 words) ~130
-5 active skills               ~9,750
-3 memory files                ~1,170
+System prompt (base)               ~2,000
+Global CLAUDE.md (500 words)       ~650
+Project CLAUDE.md (100 words)      ~130
+15 skill descriptions (constant)   ~1,500
+3 memory files                     ~1,170
 ------------------------------------------
-Session start total:          ~13,700
+Session start total:               ~5,450
++ each invoked skill's body, when it fires
 ```
 
 Each response adds: user tokens + response tokens + above.
 
-## Pricing Reference (2024)
+## Cost Arithmetic
 
-| Model | Input price | Cost at 10k tokens |
-|-------|-------------|-------------------|
-| Claude Opus 4 | $15/1M | $0.15 |
-| Claude Sonnet 4 | $3/1M | $0.03 |
-| Claude Haiku | $0.25/1M | $0.0025 |
+Don't quote prices from memory — check the current rates at
+https://www.anthropic.com/pricing. The arithmetic:
 
-**Savings from 10k token reduction per response:**
-- Sonnet: $0.03/response
-- 100 responses/day: $3/day = ~$90/month
+```
+cost per response ≈ (context tokens × input price/token)
+monthly savings   ≈ tokens saved/response × responses/day × 30 × price
+```
+
+At any price tier, a 10k-token reduction paid on every response compounds
+fast — that's the whole thesis of this plugin.
 
 ## Quick Audit Command
 
 ```bash
-# Total token estimate for all loaded context
-echo "=== Token Audit ===" && \
-echo "Global CLAUDE.md:" && \
-[ -f "$HOME/.claude/CLAUDE.md" ] && echo "  $(echo "$(wc -w < $HOME/.claude/CLAUDE.md) * 1.3 / 1" | bc) tokens" || echo "  not found" && \
-echo "Memory files:" && \
-find "$HOME/.claude" -name "*.md" -path "*remember*" 2>/dev/null | while read f; do
-  words=$(wc -w < "$f")
-  echo "  $f: $(echo "$words * 1.3 / 1" | bc) tokens"
+echo "=== Token Audit ==="
+for f in "$HOME/.claude/CLAUDE.md" ./CLAUDE.md .remember/*.md; do
+  [ -f "$f" ] && echo "  $f: $(( $(wc -w < "$f") * 13 / 10 )) tokens"
 done
 ```

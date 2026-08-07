@@ -1,7 +1,7 @@
 ---
 name: Estimate Tokens
 description: This skill should be used when the user says "estimate token usage", "how many tokens am I using", "token cost of my setup", "audit token budget", "what's eating my context", "token usage breakdown", or "how expensive is my session".
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Estimate Tokens

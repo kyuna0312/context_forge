@@ -1,7 +1,7 @@
 ---
 name: Reset Context
 description: This skill should be used when the user says "reset context", "clear context", "things are getting slow", "session is bloated", "too much context", "start fresh", "context is full", or asks to reduce memory usage mid-session. Do NOT use for a merely long-but-healthy session — a reset that loses working context costs more than it saves.
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Reset Context
