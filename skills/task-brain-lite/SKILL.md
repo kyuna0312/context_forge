@@ -8,7 +8,7 @@ description: >-
   or high ambiguity. Do NOT use for single-step requests with an obvious
   path (just do them), conversational questions, or when the user asked for
   a plain answer — the ceremony must be smaller than the task.
-version: 1.2.0
+version: 1.3.0
 ---
 
 # task_brain_lite
@@ -80,25 +80,17 @@ order — Medium skips PRIORITY entirely.
 
 ## Phase 3: PRIORITY (High complexity only)
 
-Score each task using its `cx` tag from the SPLIT table:
+Pick from the SPLIT table, in this order:
 
-```
-Ready tasks:   score = 1.0 + (1 / complexity_weight)
-               complexity_weight: L=1, M=2, H=3
+1. **Among `ready` tasks: the one that unblocks the most dependents**
+   (count tasks whose `blocked(...)` lists it). Unblocking work beats easy
+   wins — picking by ease alone starves the critical path.
+2. **Tie → lowest `cx`** (easy win first).
+3. **No ready tasks → never silently stop**: show the blocked task with the
+   fewest unmet deps and what it's waiting on:
+   `Next: [task] | Waiting on: [blocker]`
 
-Blocked tasks: score = 0.5  if unmet_deps_count == 1
-               score = 0.0  if unmet_deps_count > 1
-
-Done tasks:    score = -1   (excluded from selection)
-```
-
-Pick the highest-scoring ready task. Ties: prefer lower `cx` (easy wins first).
-
-If no ready tasks remain, surface the blocked task with score 0.5:
-- Show: `Next: [task] (score: 0.50) | Waiting on: [blocker]`
-- Never silently stop — always tell the user what needs to happen next.
-
-Show: `Next: [task_name] (score: X.XX)`
+Show: `Next: [task_name] (unblocks: N)`
 
 ## Phase 4: EXECUTE
 
@@ -119,22 +111,29 @@ After execution, confirm with user before next task — unless they said "auto" 
 
 ## Phase 5: LOG
 
-After each completed task, append to `.remember/logs/task_brain.jsonl`
-(create the directory on first write: `mkdir -p .remember/logs`):
+**One entry per completed *task*** — when the table is fully `done` (or the
+Low task finishes), not after every subtask: the fields are task-level, and
+N near-identical rows would poison the memory match. Append to
+`.remember/logs/task_brain.jsonl` (create the directory on first write:
+`mkdir -p .remember/logs`):
 
 ```json
-{"s": "task_name", "e": "2026-04-20", "sol": "one-line summary of approach", "t": ["tag1", "tag2"], "cx": "M", "n": 3}
+{"s": "task_slug", "e": "YYYY-MM-DD", "sol": "one-line summary of approach", "t": ["tag1", "tag2"], "cx": "M", "n": 3}
 ```
 
 Fields:
 - `s`: task slug/name
-- `e`: date completed
+- `e`: date completed (today)
 - `sol`: solution summary (what worked, key insight)
 - `t`: tags for future retrieval (language, domain, pattern type)
-- `cx`: complexity class (L/M/H) — used in Signal 1 of memory match
-- `n`: total subtask count in this session — used in Signal 1 of memory match
+- `cx`: task complexity class (L/M/H) — Signal 1 of memory match
+- `n`: total subtask count — Signal 1 of memory match
 
-Show: `[LOG] ✓ saved`
+Skip the log when there's nothing reusable — a trivial rename teaches
+future sessions nothing; YAGNI applies to memory too. If the file exceeds
+~200 lines, drop the oldest entries while appending.
+
+Show: `[LOG] ✓ saved` (or nothing, when skipped)
 
 ## Output Format
 
@@ -142,16 +141,16 @@ Print phase headers only when the phase runs:
 
 | Complexity | Phases shown |
 |------------|-------------|
-| Low        | `[ANALYZE]`, `[EXECUTE]`, `[LOG]` |
-| Medium     | `[ANALYZE]`, `[SEQUENCE]`, `[EXECUTE]`, `[LOG]` |
-| High       | `[ANALYZE]`, `[SPLIT]`, `[PRIORITY]`, `[EXECUTE]`, `[LOG]` |
+| Low        | `[ANALYZE]`, `[EXECUTE]` (+ `[LOG]` only if reusable) |
+| Medium     | `[ANALYZE]`, `[SEQUENCE]`, `[EXECUTE]`…, `[LOG]` once at the end |
+| High       | `[ANALYZE]`, `[SPLIT]`, `[PRIORITY]`, `[EXECUTE]`…, `[LOG]` once at the end |
 
 - Never print `[REUSE]` as a header — reuse output appears inline within `[EXECUTE]`
 - Always reprint the task state table after SPLIT or SEQUENCE, and after each EXECUTE cycle
 - Keep it tight. No phase explanation unless user asks "why".
 
 Example — "rename this function everywhere":
-`[complexity: L] [memory: miss]` → rename, `Done: 6 call sites updated, tests pass` → `[LOG] ✓ saved`. No tree, no table, three lines total.
+`[complexity: L] [memory: miss]` → rename, `Done: 6 call sites updated, tests pass`. No tree, no table, no log (nothing reusable) — two lines total.
 
 ## When NOT to use
 
